@@ -49,129 +49,126 @@ module.exports = {
 		} else {
 			try {
 
-				var paidResult;
-				await models.sequelize.transaction(async () => {
-
-					let query = `
+				let query = `
 										SELECT p.title,p.type,p.price,cp.qty, p.price*cp.qty AS total
 										FROM products p
 										LEFT JOIN cart_products cp ON cp.product_id = p.id AND cp.purchase_mode ='buy'
 										JOIN carts c ON c.id = cp.cart_id
 										WHERE c.id = ${cart_id} AND c.customer_id = ${customer_id}`
 
-					const cartProducts = await models.sequelize.query(query, { type: models.sequelize.QueryTypes.SELECT })
+				const cartProducts = await models.sequelize.query(query, { type: models.sequelize.QueryTypes.SELECT })
+				if (!cartProducts.length) {
+					await res.status(200).send(_error([], _messages.CART_EMPTY))
+				} else {
+					var paidResult;
+					await models.sequelize.transaction(async () => {
 
-					if (!cartProducts.length) {
-						throw new Error(_getError(_messages.CART_EMPTY));
-					}
+						var goodsInfo = _.map((cartProducts || []), p => {
+							return {
+								goods_name: [_.get(p, 'title', ''), _.get(p, 'type', '')].join(' '),
+								quantity: `${p.qty}`,
+							};
+						});
 
-					var goodsInfo = _.map((cartProducts || []), p => {
-						return {
-							goods_name: [_.get(p, 'title', ''), _.get(p, 'type', '')].join(' '),
-							quantity: `${p.qty}`,
-						};
-					});
+						const amount = _.sumBy(cartProducts, (p) => numeral(p.total).value());
 
-					const amount = _.sumBy(cartProducts, (p) => numeral(p.total).value());
+						await ycs._init()
 
-					await ycs._init()
+						//if (yuansfer) {
 
-					//if (yuansfer) {
-
-					var securePayResponse = await ycs._securePay({
-						amount: `${amount}`,
-						callbackUrl: redirect_url,
-						currency: `${process.env.CURRENCY}`,
-						...(vendor === 'truemoney') && {    // FOR TRUE-MONEY
-							currency: `THB`,
-						},
-						...(vendor === 'tng') && {    // FOR TOUCH-N-GO
-							currency: `MYR`,
-						},
-						...(vendor === 'gcash') && {    // FOR GCash
-							currency: `PHP`,
-						},
-						...(vendor === 'dana') && {    // FOR Dana
-							currency: `IDR`,
-						},
-						...(vendor === 'paypay') && {    // FOR PayPay
-							currency: `JPY`,
-						},
-						...(vendor === 'kakaopay') && {    // FOR Kakao Pay
-							currency: `KRW`,
-						},
-						...(vendor === 'bkash') && {    // FOR bKash
-							currency: `BDT`,
-						},
-						...(vendor === 'easypaisa') && {    // FOR Easy-Paisa
-							currency: `PKR`,
-						},
-						goodsInfo: JSON.stringify(goodsInfo),
-						ipnUrl: redirect_url,
-						reference: "ORDER#" + new Date().getTime(),
-						settleCurrency: `${process.env.SETTLECURRENCY}`,
-						terminal: `${process.env.TERMINAL}`,
-						vendor: vendor,
-						...(vendor === 'creditcard') && {
-							creditType: 'normal',
-						}
-					})
-
-					console.log('securePayResponse', securePayResponse)
-
-					if (securePayResponse) {
-
-						console.log('PAYMENT RESPONSE', securePayResponse)
-
-						const { ret_code, ret_msg, result } = securePayResponse
-
-						if (ret_code === ycs._responseCode.SUCCESS) {
-
-							paidResult = result;
-
-							// COPY CART DATA INTO ORDER DATA [START]
-							const orderData = await cs._addOrderData({
-								cart_id: cart_id,
-								customer_id: customer_id,
-							})
-
-							if (orderData && orderData.order_id) {
-
-								// ADD PAYMENT DATA [START]
-								const { amount, cashierUrl, currency, reference, settleCurrency, transactionNo } = result
-
-								await models.Payment.create({
-									customer_id: customer_id,
-									order_id: orderData.order_id,
-									vendor: vendor,
-									reference: reference,
-									paid_amount: amount,
-									currency: currency,
-									settle_currency: settleCurrency,
-									transaction_no: transactionNo,
-									cashier_url: decodeURI(cashierUrl),
-									success_code: ret_code,
-									success_message: ret_msg,
-								})
-								// ADD PAYMENT DATA [END]
-
-								securePayResponse = {
-									...securePayResponse,
-									...orderData
-								}
-
-								await res.send(_success([securePayResponse], _messages.PAYMENT_DONE))
+						var securePayResponse = await ycs._securePay({
+							amount: `${amount}`,
+							callbackUrl: redirect_url,
+							currency: `${process.env.CURRENCY}`,
+							...(vendor === 'truemoney') && {    // FOR TRUE-MONEY
+								currency: `THB`,
+							},
+							...(vendor === 'tng') && {    // FOR TOUCH-N-GO
+								currency: `MYR`,
+							},
+							...(vendor === 'gcash') && {    // FOR GCash
+								currency: `PHP`,
+							},
+							...(vendor === 'dana') && {    // FOR Dana
+								currency: `IDR`,
+							},
+							...(vendor === 'paypay') && {    // FOR PayPay
+								currency: `JPY`,
+							},
+							...(vendor === 'kakaopay') && {    // FOR Kakao Pay
+								currency: `KRW`,
+							},
+							...(vendor === 'bkash') && {    // FOR bKash
+								currency: `BDT`,
+							},
+							...(vendor === 'easypaisa') && {    // FOR Easy-Paisa
+								currency: `PKR`,
+							},
+							goodsInfo: JSON.stringify(goodsInfo),
+							ipnUrl: redirect_url,
+							reference: "ORDER#" + new Date().getTime(),
+							settleCurrency: `${process.env.SETTLECURRENCY}`,
+							terminal: `${process.env.TERMINAL}`,
+							vendor: vendor,
+							...(vendor === 'creditcard') && {
+								creditType: 'normal',
 							}
-							// COPY CART DATA INTO ORDER DATA [END]
+						})
 
+						if (securePayResponse) {
+
+							console.log('PAYMENT RESPONSE', securePayResponse)
+
+							const { ret_code, ret_msg, result } = securePayResponse
+
+							if (ret_code === ycs._responseCode.SUCCESS) {
+
+								paidResult = result;
+
+								// COPY CART DATA INTO ORDER DATA [START]
+								const orderData = await cs._addOrderData({
+									cart_id: cart_id,
+									customer_id: customer_id,
+								})
+
+								if (orderData && orderData.order_id) {
+
+									// ADD PAYMENT DATA [START]
+									const { amount, cashierUrl, currency, reference, settleCurrency, transactionNo } = result
+
+									await models.Payment.create({
+										customer_id: customer_id,
+										order_id: orderData.order_id,
+										vendor: vendor,
+										reference: reference,
+										paid_amount: amount,
+										currency: currency,
+										settle_currency: settleCurrency,
+										transaction_no: transactionNo,
+										cashier_url: decodeURI(cashierUrl),
+										success_code: ret_code,
+										success_message: ret_msg,
+									})
+									// ADD PAYMENT DATA [END]
+
+									securePayResponse = {
+										...securePayResponse,
+										...orderData
+									}
+
+									await res.status(200).send(_success([securePayResponse], _messages.PAYMENT_DONE))
+								}
+								// COPY CART DATA INTO ORDER DATA [END]
+
+							} else {
+								res.status(200).send(_error([], _getError(ret_msg)))
+							}
 						} else {
-							throw new Error(_getError(ret_msg));
+							res.status(200).send(_error([], 'Secure Pay Not Done'))
 						}
-					} else {
-						throw new Error("Secure Pay Not Done");
-					}
-					//}
-				})
+						//}
+					})
+				}
 			} catch (error) {
 
 				(async function () {
@@ -277,24 +274,21 @@ module.exports = {
 									success_code: ret_code,
 									success_message: ret_msg,
 								})
-								await res.send(_success([refundData], _messages.REFUND_INITIATED))
+								await res.status(200).send(_success([refundData], _messages.REFUND_INITIATED))
 
 							} else {
-								console.log('ERROR')
-								throw new Error(_getError(ret_msg));
+								res.status(200).send(_error([], _getError(ret_msg)))
 							}
 						} else {
-							throw new Error(_getError('Refund Error'));
+							res.status(200).send(_error([], "Refund Error"))
 						}
 						//}
 					} else {
-						throw new Error(_getError('Unknown Payment'));
+						res.status(200).send(_error([], "Unknown Payment"))
 					}
-
 				})
 			} catch (error) {
-				//await res.status(400).send(_error([], _getError(error)))
-				res.send(_error([], _getError(error)))
+				res.status(400).send(_error([], _getError(error)))
 			}
 		}
 	},
@@ -361,12 +355,12 @@ module.exports = {
 							success_code: ret_code,
 							success_message: ret_msg,
 						})
-						await res.send(_success([result], _messages.AUTHORIZE_SUCCESS))
+						await res.status(200).send(_success([result], _messages.AUTHORIZE_SUCCESS))
 					} else {
-						throw new Error(_getError(ret_msg));
+						res.status(200).send(_error([], _getError(ret_msg)))
 					}
 				} else {
-					throw new Error(_getError(_messages.AUTHORIZE_ERROR));
+					res.status(200).send(_error([], _messages.AUTHORIZE_ERROR))
 				}
 				//}
 			} catch (error) {
@@ -411,148 +405,148 @@ module.exports = {
 					})
 
 					if (!authData.auto_debit_no) {
-						throw new Error(_getError(_messages.AUTO_DEBIT_NUMBER_EMPTY));
-					}
+						res.status(200).send(_error([], _messages.AUTO_DEBIT_NUMBER_EMPTY))
+					} else {
+						const autoDebitNo = authData.auto_debit_no
 
-					const autoDebitNo = authData.auto_debit_no
-
-					const cartData = +await models.Cart.findAll({
-						where: {
-							customer_id: customer_id,
-						},
-						include: [
-							{
-								required: true,
-								model: models.CartProduct,
-								as: 'products',
-								where: {
-									purchase_mode: _purchaseMode.SUBSCRIBE,
-									subscribe_month: {
-										[Op.gte]: 1
-									}
-								},
-								include: [
-									{
-										required: true,
-										model: models.Product,
-										as: 'product',
-									}
-								],
+						const cartData = +await models.Cart.findAll({
+							where: {
+								customer_id: customer_id,
 							},
-						],
-					})
-
-					if (cartData && cartData[0]) {
-
-						const { products, shipping_address, shipping_city_state, shipping_country, shipping_email, shipping_phone } = cartData[0]
-
-						const cartId = cartData[0].id;
-
-						/* Set order information from cart */
-						const orderData = await models.Order.create({
-							customer_id: customer_id,
-							address: shipping_address,
-							city_state: shipping_city_state,
-							country: shipping_country,
-							email: shipping_email,
-							phone: shipping_phone,
+							include: [
+								{
+									required: true,
+									model: models.CartProduct,
+									as: 'products',
+									where: {
+										purchase_mode: _purchaseMode.SUBSCRIBE,
+										subscribe_month: {
+											[Op.gte]: 1
+										}
+									},
+									include: [
+										{
+											required: true,
+											model: models.Product,
+											as: 'product',
+										}
+									],
+								},
+							],
 						})
 
-						for (let cartProduct of products) {
+						if (cartData && cartData[0]) {
 
-							const { product_id, qty, size, purchase_mode, subscribe_month, product: { price } } = cartProduct
-							const amount = (numeral(numeral(price).value() * parseInt(qty)).value())
+							const { products, shipping_address, shipping_city_state, shipping_country, shipping_email, shipping_phone } = cartData[0]
 
-							if (amount > 0) {
+							const cartId = cartData[0].id;
 
-								await ycs._init()
+							/* Set order information from cart */
+							const orderData = await models.Order.create({
+								customer_id: customer_id,
+								address: shipping_address,
+								city_state: shipping_city_state,
+								country: shipping_country,
+								email: shipping_email,
+								phone: shipping_phone,
+							})
 
-								//if (yuansfer) {
+							for (let cartProduct of products) {
 
-								const tokenData = await cs._applyToken({ customer_id: customer_id, tmp: tmp })
+								const { product_id, qty, size, purchase_mode, subscribe_month, product: { price } } = cartProduct
+								const amount = (numeral(numeral(price).value() * parseInt(qty)).value())
 
-								if (tokenData && tokenData.auto_debit_no && tokenData.auto_reference) {
+								if (amount > 0) {
 
-									/* Secure Pay */
-									const autoPayData = await ycs._autoDebitPay({
-										autoDebitNo: `${autoDebitNo}`,
-										amount: `${amount}`,
-										currency: `${process.env.CURRENCY}`,
-										settleCurrency: `${process.env.SETTLECURRENCY}`,
-										reference: _referenceNo(),
-										ipnUrl: `${process.env.BACKEND_ENDPOINT_URL}` + '/payments/test3',
-									})
+									await ycs._init()
 
-									console.log('AUTO DEBIT RESPONSE', autoPayData)
+									//if (yuansfer) {
 
-									const { ret_code, ret_msg, result } = autoPayData
-									const { amount, autoDebitNo, currency, reference, settleCurrency, transactionNo, status } = result
+									const tokenData = await cs._applyToken({ customer_id: customer_id, tmp: tmp })
 
-									if (ret_code === ycs._responseCode.SUCCESS && status === 'success') {
+									if (tokenData && tokenData.auto_debit_no && tokenData.auto_reference) {
 
-										/* Delete product from cart */
-										await models.CartProduct.destroy({
-											where: {
-												cart_id: cartId,
+										/* Secure Pay */
+										const autoPayData = await ycs._autoDebitPay({
+											autoDebitNo: `${autoDebitNo}`,
+											amount: `${amount}`,
+											currency: `${process.env.CURRENCY}`,
+											settleCurrency: `${process.env.SETTLECURRENCY}`,
+											reference: _referenceNo(),
+											ipnUrl: `${process.env.BACKEND_ENDPOINT_URL}` + '/payments/test3',
+										})
+
+										console.log('AUTO DEBIT RESPONSE', autoPayData)
+
+										const { ret_code, ret_msg, result } = autoPayData
+										const { amount, autoDebitNo, currency, reference, settleCurrency, transactionNo, status } = result
+
+										if (ret_code === ycs._responseCode.SUCCESS && status === 'success') {
+
+											/* Delete product from cart */
+											await models.CartProduct.destroy({
+												where: {
+													cart_id: cartId,
+													product_id: product_id,
+												}
+											})
+
+											/* Set order product information from cart product */
+											await models.OrderProduct.create({
+												order_id: orderData.id,
 												product_id: product_id,
-											}
-										})
+												qty: qty,
+												price: price,
+												size: size,
+												purchase_mode: purchase_mode,
+												subscribe_month: subscribe_month,
+											})
 
-										/* Set order product information from cart product */
-										await models.OrderProduct.create({
-											order_id: orderData.id,
-											product_id: product_id,
-											qty: qty,
-											price: price,
-											size: size,
-											purchase_mode: purchase_mode,
-											subscribe_month: subscribe_month,
-										})
+											/* Create subscription for individual product */
+											const subscriptionData = await models.Subscription.create({
+												customer_id: customer_id,
+												order_id: orderData.id,
+												product_id: product_id,
+												amount: amount,
+												start_date: moment().format('YYYY-MM-DD'),
+												subscribe_month: subscribe_month,
+												auto_debit_no: autoDebitNo,
+											})
 
-										/* Create subscription for individual product */
-										const subscriptionData = await models.Subscription.create({
-											customer_id: customer_id,
-											order_id: orderData.id,
-											product_id: product_id,
-											amount: amount,
-											start_date: moment().format('YYYY-MM-DD'),
-											subscribe_month: subscribe_month,
-											auto_debit_no: autoDebitNo,
-										})
-
-										/* Create subscription payment */
-										await models.SubscribePayment.create({
-											subscription_id: subscriptionData.id,
-											customer_id: customer_id,
-											order_id: orderData.id,
-											paid_amount: amount,
-											auto_debit_no: autoDebitNo,
-											currency: currency,
-											reference: reference,
-											settle_currency: settleCurrency,
-											transaction_no: transactionNo,
-											status: status,
-											success_code: ret_code,
-											success_message: ret_msg,
-										})
-									} else {
-										throw new Error(ret_msg);
+											/* Create subscription payment */
+											await models.SubscribePayment.create({
+												subscription_id: subscriptionData.id,
+												customer_id: customer_id,
+												order_id: orderData.id,
+												paid_amount: amount,
+												auto_debit_no: autoDebitNo,
+												currency: currency,
+												reference: reference,
+												settle_currency: settleCurrency,
+												transaction_no: transactionNo,
+												status: status,
+												success_code: ret_code,
+												success_message: ret_msg,
+											})
+										} else {
+											res.status(200).send(_error([], _getError(ret_msg)))
+										}
 									}
+									//}
 								}
-								//}
 							}
+
+							/* Clear Cart */
+							await models.Cart.destroy({ where: { id: cartId, customer_id: customer_id } })
+							await res.status(200).send(_success([{ order_id: orderData.id }], _messages.AUTO_DEBIT_PAYMENT_SUCCESS))
+
+						} else {
+							res.status(200).send(_error([], _messages.CART_EMPTY))
 						}
-
-						/* Clear Cart */
-						await models.Cart.destroy({ where: { id: cartId, customer_id: customer_id } })
-						await res.send(_success([{ order_id: orderData.id }], _messages.AUTO_DEBIT_PAYMENT_SUCCESS))
-
-					} else {
-						throw new Error(_messages.CART_EMPTY);
 					}
 				})
 			} catch (error) {
-				await res.status(400).send(_error([], _getError(error)))
+				res.status(400).send(_error([], _getError(error)))
 			}
 		}
 	},
@@ -646,17 +640,17 @@ module.exports = {
 								})
 								// REMOVE RECURRING AUTH [END]
 
-								await res.send(_success([autoDebitRevoke], _messages.AUTO_DEBIT_PAY_REVOKED_SUCCESS))
+								await res.status(200).send(_success([autoDebitRevoke], _messages.AUTO_DEBIT_PAY_REVOKED_SUCCESS))
 							} else {
-								throw new Error(_getError(ret_msg));
+								res.status(200).send(_error([], _getError(ret_msg)))
 							}
 						}
 					} else {
-						throw new Error(_getError(_messages.NO_SUBSCRIPTION_FOUND));
+						res.status(200).send(_error([], _messages.NO_SUBSCRIPTION_FOUND))
 					}
 				})
 			} catch (error) {
-				await res.status(400).send(_error([error], _getError(error)))
+				res.status(400).send(_error([error], _getError(error)))
 			}
 		}
 	},

@@ -12,7 +12,7 @@ module.exports = {
     const { customer_id } = req.query;
 
     if (!customer_id) {
-      res.status(400).send(_error([], _messages.CUSTOMER_MISSING))
+      res.status(200).send(_error([], _messages.CUSTOMER_MISSING))
     }
 
     const cart = await models.Cart.findOne({
@@ -57,7 +57,7 @@ module.exports = {
         ],
       })
 
-      res.send(_success(carts))
+      res.status(200).send(_success(carts))
     } catch (error) {
       res.status(400).send(_error([], _getError(error)))
     }
@@ -68,7 +68,7 @@ module.exports = {
     const { purchase_mode, customer_id } = req.query;
 
     if (!id) {
-      res.status(400).send(_error([], _messages.UNKNOWN_CART))
+      res.status(200).send(_error([], _messages.UNKNOWN_CART))
     }
 
     try {
@@ -93,7 +93,7 @@ module.exports = {
         ],
       })
 
-      res.send(_success(cart))
+      res.status(200).send(_success(cart))
     } catch (error) {
       res.status(400).send(_error([], _getError(error)))
     }
@@ -171,7 +171,7 @@ module.exports = {
           if (purchase_mode === _purchaseMode.SUBSCRIBE) {
             successMessage = _messages.PRODUCT_SUBSCRIBED
           }
-          res.send(_success([cart], successMessage))
+          res.status(200).send(_success([cart], successMessage))
         }
 
       } catch (error) {
@@ -236,7 +236,6 @@ module.exports = {
         res.status(400).send(_error([], _getError(error)))
       }
     }
-
   },
   addShipping: async (req, res) => {
     const { customer_id, address, city_state, country, email, phone } = req.body
@@ -286,13 +285,13 @@ module.exports = {
     const { id } = req.params
 
     if (!id) {
-      res.status(400).send(_error([], _messages.UNKNOWN_CART))
+      res.status(200).send(_error([], _messages.UNKNOWN_CART))
     } else {
       try {
 
         await models.CartProduct.destroy({ where: { id: id } })
         await models.Cart.destroy({ where: { id: id } })
-        res.send(_success([], _messages.CART_EMPTY))
+        res.status(200).send(_success([], _messages.CART_EMPTY))
       } catch (error) {
         res.status(400).send(_error([], _getError(error)))
       }
@@ -320,7 +319,7 @@ module.exports = {
             id: cart_product_id,
           }
         })
-        res.send(_success([], _messages.PRODUCT_REMOVED))
+        res.status(200).send(_success([], _messages.PRODUCT_REMOVED))
 
       } catch (error) {
         res.status(400).send(_error([], _getError(error)))
