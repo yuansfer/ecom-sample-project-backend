@@ -1,4 +1,4 @@
-const _success = (data, message) => {
+const _success = (data = [], message) => {
     return {
         success: true,
         data: data,
@@ -6,7 +6,7 @@ const _success = (data, message) => {
     }
 }
 
-const _error = (data, message) => {
+const _error = (data = [], message) => {
     return {
         error: true,
         data: data,

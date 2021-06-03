@@ -36,7 +36,7 @@ module.exports = {
         response.mode = products[0].purchase_mode
       }
     }
-    res.send(_success(response || []))
+    res.send(_success(response))
   },
   findAll: async (req, res) => {
 
@@ -57,7 +57,7 @@ module.exports = {
         ],
       })
 
-      res.send(_success(carts || []))
+      res.send(_success(carts))
     } catch (error) {
       res.status(400).send(_error([], _getError(error)))
     }
