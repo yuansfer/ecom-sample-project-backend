@@ -36,7 +36,7 @@ module.exports = {
         response.mode = products[0].purchase_mode
       }
     }
-    res.send(_success(response))
+    res.status(200).send(_success(response))
   },
   findAll: async (req, res) => {
 
@@ -155,7 +155,7 @@ module.exports = {
           if (purchase_mode === _purchaseMode.SUBSCRIBE) {
             successMessage = _messages.SUBSCRIBED_PRODUCT_UPDATED
           }
-          res.send(_success([cart], successMessage))
+          res.status(200).send(_success([cart], successMessage))
 
         } else {
           await models.CartProduct.create({
@@ -224,12 +224,12 @@ module.exports = {
           await cartProduct.save()
 
           if (cartProduct.purchase_mode === _purchaseMode.SUBSCRIBE) {
-            res.send(_success([cartProduct], _messages.SUBSCRIBED_PRODUCT_UPDATED))
+            res.status(200).send(_success([cartProduct], _messages.SUBSCRIBED_PRODUCT_UPDATED))
           } else {
-            res.send(_success([cartProduct], _messages.CART_UPDATED))
+            res.status(200).send(_success([cartProduct], _messages.CART_UPDATED))
           }
         } else {
-          throw new Error(_getError(_messages.NO_SUCH_PRODUCT_IN_CART));
+          res.status(200).send(_error([], _messages.NO_SUCH_PRODUCT_IN_CART))
         }
 
       } catch (error) {
@@ -274,7 +274,7 @@ module.exports = {
           cart.shipping_email = email
           cart.shipping_phone = phone
           await cart.save()
-          res.send(_success([cart], _messages.SHIPPING_ADDRESS_UPDATED))
+          res.status(200).send(_success([cart], _messages.SHIPPING_ADDRESS_UPDATED))
         }
       } catch (error) {
         res.status(400).send(_error([], _getError(error)))
