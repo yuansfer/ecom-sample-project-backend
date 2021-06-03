@@ -44,40 +44,39 @@ module.exports = {
 			errorMessage = _messages.VENDOR_MISSING
 		}
 
-		console.log('errorMessage', errorMessage)
 		if (errorMessage) {
-			await res.status(400).send(_error([], errorMessage))
-		}
+			await res.status(200).send(_error([], errorMessage))
+		} else {
+			try {
 
-		try {
-			var paidResult;
-			await models.sequelize.transaction(async () => {
+				var paidResult;
+				await models.sequelize.transaction(async () => {
 
-				let query = `
-									SELECT p.title,p.type,p.price,cp.qty, p.price*cp.qty AS total
-									FROM products p
-									LEFT JOIN cart_products cp ON cp.product_id = p.id AND cp.purchase_mode ='buy'
-									JOIN carts c ON c.id = cp.cart_id
-									WHERE c.id = ${cart_id} AND c.customer_id = ${customer_id}`
+					let query = `
+										SELECT p.title,p.type,p.price,cp.qty, p.price*cp.qty AS total
+										FROM products p
+										LEFT JOIN cart_products cp ON cp.product_id = p.id AND cp.purchase_mode ='buy'
+										JOIN carts c ON c.id = cp.cart_id
+										WHERE c.id = ${cart_id} AND c.customer_id = ${customer_id}`
 
-				const cartProducts = await models.sequelize.query(query, { type: models.sequelize.QueryTypes.SELECT })
+					const cartProducts = await models.sequelize.query(query, { type: models.sequelize.QueryTypes.SELECT })
 
-				if (!cartProducts.length) {
-					throw new Error(_getError(_messages.CART_EMPTY));
-				}
+					if (!cartProducts.length) {
+						throw new Error(_getError(_messages.CART_EMPTY));
+					}
 
-				var goodsInfo = _.map((cartProducts || []), p => {
-					return {
-						goods_name: [_.get(p, 'title', ''), _.get(p, 'type', '')].join(' '),
-						quantity: `${p.qty}`,
-					};
-				});
+					var goodsInfo = _.map((cartProducts || []), p => {
+						return {
+							goods_name: [_.get(p, 'title', ''), _.get(p, 'type', '')].join(' '),
+							quantity: `${p.qty}`,
+						};
+					});
 
-				const amount = _.sumBy(cartProducts, (p) => numeral(p.total).value());
+					const amount = _.sumBy(cartProducts, (p) => numeral(p.total).value());
 
-				await ycs._init()
+					await ycs._init()
 
-				//if (yuansfer) {
+					//if (yuansfer) {
 
 					var securePayResponse = await ycs._securePay({
 						amount: `${amount}`,
@@ -118,7 +117,7 @@ module.exports = {
 						}
 					})
 
-				console.log('securePayResponse', securePayResponse)
+					console.log('securePayResponse', securePayResponse)
 
 					if (securePayResponse) {
 
@@ -171,30 +170,31 @@ module.exports = {
 					} else {
 						throw new Error("Secure Pay Not Done");
 					}
-				//}
-			})
-		} catch (error) {
+					//}
+				})
+			} catch (error) {
 
-			(async function () {
-				/* Revert Payment in case of any issue if paid */
-				if (paidResult) {
-					const { amount, currency, reference, settleCurrency, transactionNo } = paidResult
+				(async function () {
+					/* Revert Payment in case of any issue if paid */
+					if (paidResult) {
+						const { amount, currency, reference, settleCurrency, transactionNo } = paidResult
 
-					await ycs._refund({
-						refundAmount: `${amount}`,
-						currency: `${currency}`,
-						settleCurrency: `${settleCurrency}`,
-						...(transactionNo) && {
-							transactionNo: transactionNo,
-						},
-						...(!transactionNo) && {
-							reference: reference,
-						}
-					})
-				}
+						await ycs._refund({
+							refundAmount: `${amount}`,
+							currency: `${currency}`,
+							settleCurrency: `${settleCurrency}`,
+							...(transactionNo) && {
+								transactionNo: transactionNo,
+							},
+							...(!transactionNo) && {
+								reference: reference,
+							}
+						})
+					}
 
-				await res.status(400).send(_error([], _getError(error)))
-			})();
+					await res.status(400).send(_error([], _getError(error)))
+				})();
+			}
 		}
 	},
 
@@ -218,25 +218,25 @@ module.exports = {
 		}
 
 		if (errorMessage) {
-			await res.status(400).send(_error([], errorMessage))
-		}
+			await res.status(200).send(_error([], errorMessage))
+		} else {
+			try {
 
-		try {
-			await models.sequelize.transaction(async () => {
+				await models.sequelize.transaction(async () => {
 
-				const payment = await models.Payment.findOne({
-					where: {
-						customer_id: customer_id,
-						order_id: order_id,
-					},
-				})
+					const payment = await models.Payment.findOne({
+						where: {
+							customer_id: customer_id,
+							order_id: order_id,
+						},
+					})
 
-				if (payment) {
-					const { vendor, reference, paid_amount, currency, settle_currency, transaction_no } = payment
+					if (payment) {
+						const { vendor, reference, paid_amount, currency, settle_currency, transaction_no } = payment
 
-					await ycs._init()
+						await ycs._init()
 
-					//if (yuansfer) {
+						//if (yuansfer) {
 						/**
 					* transactionNo, reference cannot exist the same time.
 					*/
@@ -286,15 +286,16 @@ module.exports = {
 						} else {
 							throw new Error(_getError('Refund Error'));
 						}
-					//}
-				} else {
-					throw new Error(_getError('Unknown Payment'));
-				}
+						//}
+					} else {
+						throw new Error(_getError('Unknown Payment'));
+					}
 
-			})
-		} catch (error) {
-			//await res.status(400).send(_error([], _getError(error)))
-			res.send(_error([], _getError(error)))
+				})
+			} catch (error) {
+				//await res.status(400).send(_error([], _getError(error)))
+				res.send(_error([], _getError(error)))
+			}
 		}
 	},
 
@@ -322,14 +323,13 @@ module.exports = {
 		}
 
 		if (errorMessage) {
-			await res.status(400).send(_error([], errorMessage))
-		}
+			await res.status(200).send(_error([], errorMessage))
+		} else {
+			try {
 
-		try {
+				await ycs._init()
 
-			await ycs._init()
-
-			//if (yuansfer) {
+				//if (yuansfer) {
 
 				const temp_id = _uuid();
 				const params = {
@@ -340,7 +340,7 @@ module.exports = {
 					vendor: vendor,
 				}
 
-			const autoDebitConsultData = await ycs._autoDebitConsult(params)
+				const autoDebitConsultData = await ycs._autoDebitConsult(params)
 
 				if (autoDebitConsultData) {
 
@@ -368,9 +368,10 @@ module.exports = {
 				} else {
 					throw new Error(_getError(_messages.AUTHORIZE_ERROR));
 				}
-			//}
-		} catch (error) {
-			await res.status(400).send(_error([], _getError(error)))
+				//}
+			} catch (error) {
+				await res.status(400).send(_error([], _getError(error)))
+			}
 		}
 	},
 
@@ -396,78 +397,77 @@ module.exports = {
 		}
 
 		if (errorMessage) {
-			await res.status(400).send(_error([], errorMessage))
-		}
+			await res.status(200).send(_error([], errorMessage))
+		} else {
+			try {
 
-		try {
+				await models.sequelize.transaction(async () => {
 
-			await models.sequelize.transaction(async () => {
-
-				const authData = await models.RecurringAuthorization.findOne({
-					where: {
-						customer_id: customer_id,
-						temp_id: tmp,
-					}
-				})
-
-				if (!authData.auto_debit_no) {
-					throw new Error(_getError(_messages.AUTO_DEBIT_NUMBER_EMPTY));
-				}
-
-				const autoDebitNo = authData.auto_debit_no
-
-				const cartData = +await models.Cart.findAll({
-					where: {
-						customer_id: customer_id,
-					},
-					include: [
-						{
-							required: true,
-							model: models.CartProduct,
-							as: 'products',
-							where: {
-								purchase_mode: _purchaseMode.SUBSCRIBE,
-								subscribe_month: {
-									[Op.gte]: 1
-								}
-							},
-							include: [
-								{
-									required: true,
-									model: models.Product,
-									as: 'product',
-								}
-							],
-						},
-					],
-				})
-
-				if (cartData && cartData[0]) {
-
-					const { products, shipping_address, shipping_city_state, shipping_country, shipping_email, shipping_phone } = cartData[0]
-
-					const cartId = cartData[0].id;
-
-					/* Set order information from cart */
-					const orderData = await models.Order.create({
-						customer_id: customer_id,
-						address: shipping_address,
-						city_state: shipping_city_state,
-						country: shipping_country,
-						email: shipping_email,
-						phone: shipping_phone,
+					const authData = await models.RecurringAuthorization.findOne({
+						where: {
+							customer_id: customer_id,
+							temp_id: tmp,
+						}
 					})
 
-					for (let cartProduct of products) {
+					if (!authData.auto_debit_no) {
+						throw new Error(_getError(_messages.AUTO_DEBIT_NUMBER_EMPTY));
+					}
 
-						const { product_id, qty, size, purchase_mode, subscribe_month, product: { price } } = cartProduct
-						const amount = (numeral(numeral(price).value() * parseInt(qty)).value())
+					const autoDebitNo = authData.auto_debit_no
 
-						if (amount > 0) {
+					const cartData = +await models.Cart.findAll({
+						where: {
+							customer_id: customer_id,
+						},
+						include: [
+							{
+								required: true,
+								model: models.CartProduct,
+								as: 'products',
+								where: {
+									purchase_mode: _purchaseMode.SUBSCRIBE,
+									subscribe_month: {
+										[Op.gte]: 1
+									}
+								},
+								include: [
+									{
+										required: true,
+										model: models.Product,
+										as: 'product',
+									}
+								],
+							},
+						],
+					})
 
-							await ycs._init()
+					if (cartData && cartData[0]) {
 
-							//if (yuansfer) {
+						const { products, shipping_address, shipping_city_state, shipping_country, shipping_email, shipping_phone } = cartData[0]
+
+						const cartId = cartData[0].id;
+
+						/* Set order information from cart */
+						const orderData = await models.Order.create({
+							customer_id: customer_id,
+							address: shipping_address,
+							city_state: shipping_city_state,
+							country: shipping_country,
+							email: shipping_email,
+							phone: shipping_phone,
+						})
+
+						for (let cartProduct of products) {
+
+							const { product_id, qty, size, purchase_mode, subscribe_month, product: { price } } = cartProduct
+							const amount = (numeral(numeral(price).value() * parseInt(qty)).value())
+
+							if (amount > 0) {
+
+								await ycs._init()
+
+								//if (yuansfer) {
 
 								const tokenData = await cs._applyToken({ customer_id: customer_id, tmp: tmp })
 
@@ -539,20 +539,21 @@ module.exports = {
 										throw new Error(ret_msg);
 									}
 								}
-							//}
+								//}
+							}
 						}
+
+						/* Clear Cart */
+						await models.Cart.destroy({ where: { id: cartId, customer_id: customer_id } })
+						await res.send(_success([{ order_id: orderData.id }], _messages.AUTO_DEBIT_PAYMENT_SUCCESS))
+
+					} else {
+						throw new Error(_messages.CART_EMPTY);
 					}
-
-					/* Clear Cart */
-					await models.Cart.destroy({ where: { id: cartId, customer_id: customer_id } })
-					await res.send(_success([{ order_id: orderData.id }], _messages.AUTO_DEBIT_PAYMENT_SUCCESS))
-
-				} else {
-					throw new Error(_messages.CART_EMPTY);
-				}
-			})
-		} catch (error) {
-			await res.status(400).send(_error([], _getError(error)))
+				})
+			} catch (error) {
+				await res.status(400).send(_error([], _getError(error)))
+			}
 		}
 	},
 
@@ -578,85 +579,85 @@ module.exports = {
 		}
 
 		if (errorMessage) {
-			await res.status(400).send(_error([], errorMessage))
-		}
+			await res.status(200).send(_error([], errorMessage))
+		} else {
+			try {
 
-		try {
+				await models.sequelize.transaction(async () => {
 
-			await models.sequelize.transaction(async () => {
+					const subscribePaymentData = await models.SubscribePayment.findOne({
+						where: {
+							customer_id: customer_id,
+							order_id: order_id,
+							auto_debit_no: auto_debit_no,
+						},
+					})
 
-				const subscribePaymentData = await models.SubscribePayment.findOne({
-					where: {
-						customer_id: customer_id,
-						order_id: order_id,
-						auto_debit_no: auto_debit_no,
-					},
-				})
+					if (subscribePaymentData) {
 
-				if (subscribePaymentData) {
+						await ycs._init()
+						const autoDebitRevoke = await ycs.autoDebitRevoke({ autoDebitNo: auto_debit_no, })
 
-					await ycs._init()
-					const autoDebitRevoke = await ycs.autoDebitRevoke({ autoDebitNo: auto_debit_no, })
+						if (autoDebitRevoke) {
 
-					if (autoDebitRevoke) {
+							console.log('AUTO DEBIT REVOKE RESPONSE', autoDebitRevoke)
+							const { ret_code, ret_msg, result } = autoDebitRevoke
 
-						console.log('AUTO DEBIT REVOKE RESPONSE', autoDebitRevoke)
-						const { ret_code, ret_msg, result } = autoDebitRevoke
+							if (ret_code === ycs._responseCode.SUCCESS) {
 
-						if (ret_code === ycs._responseCode.SUCCESS) {
+								// SET CANCEL SUBSCRIPTION HISTORICAL DATA [START]
+								const { autoDebitNo, autoReference, vendor } = result
 
-							// SET CANCEL SUBSCRIPTION HISTORICAL DATA [START]
-							const { autoDebitNo, autoReference, vendor } = result
-
-							await models.CancelSubscription.create({
-								customer_id: customer_id,
-								order_id: order_id,
-								vendor: vendor,
-								auto_debit_no: autoDebitNo,
-								auto_reference: autoReference,
-								success_code: ret_code,
-								success_message: ret_msg,
-							})
-							// SET CANCEL SUBSCRIPTION HISTORICAL DATA [END]
-
-							// REMOVE SUBSCRIPTION PAYMENT [START]
-							await models.SubscribePayment.destroy({
-								where: {
+								await models.CancelSubscription.create({
 									customer_id: customer_id,
 									order_id: order_id,
-								}
-							})
-							// REMOVE SUBSCRIPTION PAYMENT [END]
+									vendor: vendor,
+									auto_debit_no: autoDebitNo,
+									auto_reference: autoReference,
+									success_code: ret_code,
+									success_message: ret_msg,
+								})
+								// SET CANCEL SUBSCRIPTION HISTORICAL DATA [END]
 
-							// REMOVE SUBSCRIPTION [START]
-							await models.Subscription.destroy({
-								where: {
-									customer_id: customer_id,
-									order_id: order_id,
-								}
-							})
-							// REMOVE SUBSCRIPTION [END]
+								// REMOVE SUBSCRIPTION PAYMENT [START]
+								await models.SubscribePayment.destroy({
+									where: {
+										customer_id: customer_id,
+										order_id: order_id,
+									}
+								})
+								// REMOVE SUBSCRIPTION PAYMENT [END]
 
-							// REMOVE RECURRING AUTH [START]
-							await models.RecurringAuthorization.destroy({
-								where: {
-									customer_id: customer_id,
-									order_id: order_id,
-								}
-							})
-							// REMOVE RECURRING AUTH [END]
+								// REMOVE SUBSCRIPTION [START]
+								await models.Subscription.destroy({
+									where: {
+										customer_id: customer_id,
+										order_id: order_id,
+									}
+								})
+								// REMOVE SUBSCRIPTION [END]
 
-							await res.send(_success([autoDebitRevoke], _messages.AUTO_DEBIT_PAY_REVOKED_SUCCESS))
-						} else {
-							throw new Error(_getError(ret_msg));
+								// REMOVE RECURRING AUTH [START]
+								await models.RecurringAuthorization.destroy({
+									where: {
+										customer_id: customer_id,
+										order_id: order_id,
+									}
+								})
+								// REMOVE RECURRING AUTH [END]
+
+								await res.send(_success([autoDebitRevoke], _messages.AUTO_DEBIT_PAY_REVOKED_SUCCESS))
+							} else {
+								throw new Error(_getError(ret_msg));
+							}
 						}
+					} else {
+						throw new Error(_getError(_messages.NO_SUBSCRIPTION_FOUND));
 					}
-				} else {
-					throw new Error(_getError(_messages.NO_SUBSCRIPTION_FOUND));
-				}
-			})
-		} catch (error) {
-			await res.status(400).send(_error([error], _getError(error)))
+				})
+			} catch (error) {
+				await res.status(400).send(_error([error], _getError(error)))
+			}
 		}
 	},
 

@@ -12,7 +12,7 @@ module.exports = {
     const { customer_id } = req.query;
 
     if (!customer_id) {
-      await res.status(400).send(_error([], _messages.CUSTOMER_MISSING))
+      res.status(400).send(_error([], _messages.CUSTOMER_MISSING))
     }
 
     const cart = await models.Cart.findOne({
@@ -36,7 +36,7 @@ module.exports = {
         response.mode = products[0].purchase_mode
       }
     }
-    await res.send(_success(response || []))
+    res.send(_success(response || []))
   },
   findAll: async (req, res) => {
 
@@ -57,7 +57,7 @@ module.exports = {
         ],
       })
 
-      await res.send(_success(carts || []))
+      res.send(_success(carts || []))
     } catch (error) {
       res.status(400).send(_error([], _getError(error)))
     }
@@ -68,7 +68,7 @@ module.exports = {
     const { purchase_mode, customer_id } = req.query;
 
     if (!id) {
-      await res.status(400).send(_error([], _messages.UNKNOWN_CART))
+      res.status(400).send(_error([], _messages.UNKNOWN_CART))
     }
 
     try {
@@ -93,7 +93,7 @@ module.exports = {
         ],
       })
 
-      await res.send(_success(cart))
+      res.send(_success(cart))
     } catch (error) {
       res.status(400).send(_error([], _getError(error)))
     }
@@ -118,65 +118,65 @@ module.exports = {
     }
 
     if (errorMessage) {
-      await res.status(400).send(_error([], errorMessage))
-    }
+      res.status(200).send(_error([], errorMessage))
+    } else {
+      try {
 
-    try {
-
-      var cart = await models.Cart.findOne({
-        where: {
-          customer_id: customer_id,
-        }
-      })
-
-      if (!cart) {
-        cart = await models.Cart.create({
-          customer_id: customer_id
-        })
-      }
-
-      const cartProduct = await models.CartProduct.findOne({
-        where: {
-          product_id: product_id,
-          cart_id: cart.id,
-          purchase_mode: purchase_mode,
-          size: size,
-        }
-      })
-
-      if (cartProduct) {
-
-        cartProduct.qty = parseInt(cartProduct.qty) + parseInt(qty)
-        if (subscribe_month) {
-          cartProduct.subscribe_month = parseInt(subscribe_month)
-        }
-        await cartProduct.save()
-
-        let successMessage = _messages.CART_UPDATED;
-        if (purchase_mode === _purchaseMode.SUBSCRIBE) {
-          successMessage = _messages.SUBSCRIBED_PRODUCT_UPDATED
-        }
-        await res.send(_success([cart], successMessage))
-
-      } else {
-        await models.CartProduct.create({
-          cart_id: cart.id,
-          product_id: product_id,
-          qty: qty,
-          size: size,
-          purchase_mode: purchase_mode,
-          ...(subscribe_month) && { subscribe_month: parseInt(subscribe_month) }
+        var cart = await models.Cart.findOne({
+          where: {
+            customer_id: customer_id,
+          }
         })
 
-        let successMessage = _messages.PRODUCT_ADDED;
-        if (purchase_mode === _purchaseMode.SUBSCRIBE) {
-          successMessage = _messages.PRODUCT_SUBSCRIBED
+        if (!cart) {
+          cart = await models.Cart.create({
+            customer_id: customer_id
+          })
         }
-        await res.send(_success([cart], successMessage))
-      }
 
-    } catch (error) {
-      res.status(400).send(_error([], _getError(error)))
+        const cartProduct = await models.CartProduct.findOne({
+          where: {
+            product_id: product_id,
+            cart_id: cart.id,
+            purchase_mode: purchase_mode,
+            size: size,
+          }
+        })
+
+        if (cartProduct) {
+
+          cartProduct.qty = parseInt(cartProduct.qty) + parseInt(qty)
+          if (subscribe_month) {
+            cartProduct.subscribe_month = parseInt(subscribe_month)
+          }
+          await cartProduct.save()
+
+          let successMessage = _messages.CART_UPDATED;
+          if (purchase_mode === _purchaseMode.SUBSCRIBE) {
+            successMessage = _messages.SUBSCRIBED_PRODUCT_UPDATED
+          }
+          res.send(_success([cart], successMessage))
+
+        } else {
+          await models.CartProduct.create({
+            cart_id: cart.id,
+            product_id: product_id,
+            qty: qty,
+            size: size,
+            purchase_mode: purchase_mode,
+            ...(subscribe_month) && { subscribe_month: parseInt(subscribe_month) }
+          })
+
+          let successMessage = _messages.PRODUCT_ADDED;
+          if (purchase_mode === _purchaseMode.SUBSCRIBE) {
+            successMessage = _messages.PRODUCT_SUBSCRIBED
+          }
+          res.send(_success([cart], successMessage))
+        }
+
+      } catch (error) {
+        res.status(400).send(_error([], _getError(error)))
+      }
     }
   },
   updateProduct: async (req, res) => {
@@ -193,48 +193,48 @@ module.exports = {
     }
 
     if (errorMessage) {
-      await res.status(400).send(_error([], errorMessage))
-    }
+      res.status(200).send(_error([], errorMessage))
+    } else {
+      try {
 
-    try {
+        const cartProduct = await models.CartProduct.findOne({
+          where: {
+            id: cart_product_id,
+            product_id: product_id,
+            cart_id: cart_id,
+          }
+        })
 
-      const cartProduct = await models.CartProduct.findOne({
-        where: {
-          id: cart_product_id,
-          product_id: product_id,
-          cart_id: cart_id,
-        }
-      })
+        if (cartProduct) {
 
-      if (cartProduct) {
+          cartProduct.qty = parseInt(cartProduct.qty)
 
-        cartProduct.qty = parseInt(cartProduct.qty)
+          if (subscribe_month) {
+            cartProduct.subscribe_month = parseInt(subscribe_month)
+          }
 
-        if (subscribe_month) {
-          cartProduct.subscribe_month = parseInt(subscribe_month)
-        }
+          if (size) {
+            cartProduct.size = size
+          }
 
-        if (size) {
-          cartProduct.size = size
-        }
+          if (qty) {
+            cartProduct.qty = parseInt(cartProduct.qty) + parseInt(qty)
+          }
 
-        if (qty) {
-          cartProduct.qty = parseInt(cartProduct.qty) + parseInt(qty)
-        }
+          await cartProduct.save()
 
-        await cartProduct.save()
-
-        if (cartProduct.purchase_mode === _purchaseMode.SUBSCRIBE) {
-          await res.send(_success([cartProduct], _messages.SUBSCRIBED_PRODUCT_UPDATED))
+          if (cartProduct.purchase_mode === _purchaseMode.SUBSCRIBE) {
+            res.send(_success([cartProduct], _messages.SUBSCRIBED_PRODUCT_UPDATED))
+          } else {
+            res.send(_success([cartProduct], _messages.CART_UPDATED))
+          }
         } else {
-          await res.send(_success([cartProduct], _messages.CART_UPDATED))
+          throw new Error(_getError(_messages.NO_SUCH_PRODUCT_IN_CART));
         }
-      } else {
-        throw new Error(_getError(_messages.NO_SUCH_PRODUCT_IN_CART));
-      }
 
-    } catch (error) {
-      res.status(400).send(_error([], _getError(error)))
+      } catch (error) {
+        res.status(400).send(_error([], _getError(error)))
+      }
     }
 
   },
@@ -258,46 +258,45 @@ module.exports = {
     }
 
     if (errorMessage) {
-      await res.status(400).send(_error([], errorMessage))
-    }
+      res.status(200).send(_error([], errorMessage))
+    } else {
+      try {
 
-    try {
+        const cart = await models.Cart.findOne({
+          where: {
+            customer_id: customer_id,
+          }
+        })
 
-      const cart = await models.Cart.findOne({
-        where: {
-          customer_id: customer_id,
+        if (cart) {
+          cart.shipping_address = address
+          cart.shipping_city_state = city_state
+          cart.shipping_country = country
+          cart.shipping_email = email
+          cart.shipping_phone = phone
+          await cart.save()
+          res.send(_success([cart], _messages.SHIPPING_ADDRESS_UPDATED))
         }
-      })
-
-      if (cart) {
-        cart.shipping_address = address
-        cart.shipping_city_state = city_state
-        cart.shipping_country = country
-        cart.shipping_email = email
-        cart.shipping_phone = phone
-        await cart.save()
-        await res.send(_success([cart], _messages.SHIPPING_ADDRESS_UPDATED))
+      } catch (error) {
+        res.status(400).send(_error([], _getError(error)))
       }
-    } catch (error) {
-      res.status(400).send(_error([], _getError(error)))
     }
   },
   emptyCart: async (req, res) => {
     const { id } = req.params
 
     if (!id) {
-      await res.status(400).send(_error([], _messages.UNKNOWN_CART))
+      res.status(400).send(_error([], _messages.UNKNOWN_CART))
+    } else {
+      try {
+
+        await models.CartProduct.destroy({ where: { id: id } })
+        await models.Cart.destroy({ where: { id: id } })
+        res.send(_success([], _messages.CART_EMPTY))
+      } catch (error) {
+        res.status(400).send(_error([], _getError(error)))
+      }
     }
-
-    try {
-
-      await models.CartProduct.destroy({ where: { id: id } })
-      await models.Cart.destroy({ where: { id: id } })
-      await res.send(_success([], _messages.CART_EMPTY))
-    } catch (error) {
-      res.status(400).send(_error([], _getError(error)))
-    }
-
   },
   removeProduct: async (req, res) => {
 
@@ -311,20 +310,21 @@ module.exports = {
     }
 
     if (errorMessage) {
-      await res.status(400).send(_error([], errorMessage))
-    }
+      res.status(200).send(_error([], errorMessage))
+    } else {
+      try {
 
-    try {
-      await models.CartProduct.destroy({
-        where: {
-          cart_id: id,
-          id: cart_product_id,
-        }
-      })
-      await res.send(_success([], _messages.PRODUCT_REMOVED))
+        await models.CartProduct.destroy({
+          where: {
+            cart_id: id,
+            id: cart_product_id,
+          }
+        })
+        res.send(_success([], _messages.PRODUCT_REMOVED))
 
-    } catch (error) {
-      res.status(400).send(_error([], _getError(error)))
+      } catch (error) {
+        res.status(400).send(_error([], _getError(error)))
+      }
     }
   },
 };
