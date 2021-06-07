@@ -9,6 +9,7 @@ module.exports = (sequelize, DataTypes) => {
         role_id: {
             type: DataTypes.INTEGER(11),
             allowNull: true,
+            defaultValue: null,
         },
         user_type: {
             type: DataTypes.ENUM('customer', 'merchant'),
@@ -88,16 +89,16 @@ module.exports = (sequelize, DataTypes) => {
         }],
     });
 
-    // User.associate = models => {
-    //     User.belongsTo(models.Role, {
-    //         sourceKey: "id",
-    //         as: 'role',
-    //         foreignKey: {
-    //             name: 'role_id',
-    //             allowNull: true
-    //         }
-    //     });
-    // }
+    User.associate = models => {
+        User.belongsTo(models.Role, {
+            sourceKey: "id",
+            as: 'role',
+            foreignKey: {
+                name: 'role_id',
+                allowNull: true
+            }
+        });
+    }
 
     return User;
 };

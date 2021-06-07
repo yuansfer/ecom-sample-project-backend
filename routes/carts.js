@@ -1,5 +1,10 @@
 const router = require('express').Router();
 const cartController = require('../controllers/cartController');
+const { authenticate } = require('../middlewares/auth.middleware');
+
+const MIDDLEWARES = [
+    authenticate
+];
 
 router
     .route('/')
@@ -8,12 +13,11 @@ router
 
 router
     .route('/mode')
-    .get(cartController.getMode)
+    .get(cartController.getMode);
 
 router
     .route('/:id(\\d+)')
     .get(cartController.findOne)
-    .delete(cartController.emptyCart);
 
 // router
 //     .route('/:id/product/:product_id')

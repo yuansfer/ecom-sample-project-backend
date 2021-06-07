@@ -2,8 +2,14 @@ var models = require('../models/index');
 const { _success, _error, _notifications } = require('../constants');
 
 module.exports = {
-	findAll: async (req, res) => {
 
+	/**
+	* @method get
+	* @description To get list of all products
+	* @param req,
+	* @returns {object}
+	*/
+	findAll: async (req, res) => {
 		try {
 			const products = await models.Product.findAll()
 			await res.send(_success(products))
@@ -12,8 +18,14 @@ module.exports = {
 		}
 
 	},
-	findByPk: async (req, res) => {
 
+	/**
+	* @method get
+	* @description To get single product
+	* @param req,
+	* @returns {object}
+	*/
+	findByPk: async (req, res) => {
 		const { id } = req.params
 		try {
 			const product = await models.Product.findByPk(id)

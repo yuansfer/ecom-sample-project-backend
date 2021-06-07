@@ -8,6 +8,12 @@ const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
 module.exports = {
+  /**
+  * @method get
+  * @description To check payment mode of purchase for purticular customer user
+  * @param req, customer_id
+  * @returns {object}
+  */
   getMode: async (req, res) => {
     const { customer_id } = req.query;
 
@@ -38,10 +44,16 @@ module.exports = {
     }
     res.status(200).send(_success(response))
   },
+
+  /**
+  * @method get
+  * @description To get list of all cart details with product information
+  * @param req,
+  * @returns {object}
+  */
   findAll: async (req, res) => {
 
     try {
-
       const carts = await models.Cart.findAll({
         include: [
           {
@@ -62,6 +74,13 @@ module.exports = {
       res.status(400).send(_error([], _getError(error)))
     }
   },
+
+  /**
+  * @method get
+  * @description To get a cart details with product information
+  * @param req,
+  * @returns {object}
+  */
   findOne: async (req, res) => {
 
     const { id } = req.params
@@ -98,8 +117,14 @@ module.exports = {
       res.status(400).send(_error([], _getError(error)))
     }
   },
-  addORupdate: async (req, res) => {
 
+  /**
+  * @method post
+  * @description To Add new product into cart OR Update existed product information of cart
+  * @param req, customer_id, product_id and other product detail
+  * @returns {object}
+  */
+  addORupdate: async (req, res) => {
     const { customer_id, product_id, qty, size, purchase_mode, subscribe_month } = req.body
     let errorMessage;
 
@@ -179,6 +204,13 @@ module.exports = {
       }
     }
   },
+
+  /**
+  * @method put
+  * @description To Update product information of cart
+  * @param req, cart_id, product_id and other product detail
+  * @returns {object}
+  */
   updateProduct: async (req, res) => {
 
     const { cart_id, cart_product_id, product_id, qty, size, subscribe_month } = req.body
@@ -237,6 +269,13 @@ module.exports = {
       }
     }
   },
+
+  /**
+  * @method put
+  * @description To add shipping address detail of buyer
+  * @param req, customer_id, shipping address detail
+  * @returns {object}
+  */
   addShipping: async (req, res) => {
     const { customer_id, address, city_state, country, email, phone } = req.body
 
@@ -281,22 +320,12 @@ module.exports = {
       }
     }
   },
-  emptyCart: async (req, res) => {
-    const { id } = req.params
 
-    if (!id) {
-      res.status(200).send(_error([], _messages.UNKNOWN_CART))
-    } else {
-      try {
-
-        await models.CartProduct.destroy({ where: { id: id } })
-        await models.Cart.destroy({ where: { id: id } })
-        res.status(200).send(_success([], _messages.CART_EMPTY))
-      } catch (error) {
-        res.status(400).send(_error([], _getError(error)))
-      }
-    }
-  },
+  /**
+  * @method delete
+  * @description To delete product from cart
+  * @returns success message
+  */
   removeProduct: async (req, res) => {
 
     const { id, cart_product_id } = req.params

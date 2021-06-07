@@ -56,18 +56,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(255),
             allowNull: false
         },
-        merchant_no: {
-            type: DataTypes.STRING(255),
-            allowNull: false
-        },
-        store_no: {
-            type: DataTypes.STRING(255),
-            allowNull: false
-        },
-        verify_sign: {
-            type: DataTypes.STRING(255),
-            allowNull: true
-        },
         createdAt: {
             type: DataTypes.DATE,
             allowNull: false,

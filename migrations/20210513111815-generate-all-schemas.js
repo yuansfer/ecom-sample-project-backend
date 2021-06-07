@@ -10,7 +10,7 @@ module.exports = {
       .then(() => {
 
         // CUSTOMERS
-        let sql = "CREATE TABLE IF NOT EXISTS `customers` (   `id` int(11) NOT NULL AUTO_INCREMENT,   `firstname` varchar(255) CHARACTER SET utf8 NOT NULL,   `lastname` varchar(255) CHARACTER SET utf8 DEFAULT NULL,   `username` varchar(255) CHARACTER SET utf8 NOT NULL,   `email` varchar(255) CHARACTER SET utf8 NOT NULL,   `password` varchar(255) CHARACTER SET utf8 NOT NULL,   `merchant_no` varchar(255) CHARACTER SET utf8 NOT NULL,   `store_no` varchar(255) CHARACTER SET utf8 NOT NULL,   `verify_sign` varchar(255) CHARACTER SET utf8 DEFAULT NULL,   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,   PRIMARY KEY (`id`),   UNIQUE KEY `username` (`username`),   UNIQUE KEY `email` (`email`) ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;";
+        let sql = "CREATE TABLE IF NOT EXISTS `customers` (  `id` int(11) NOT NULL AUTO_INCREMENT,   `firstname` varchar(255) CHARACTER SET utf8 NOT NULL,  `lastname` varchar(255) CHARACTER SET utf8 DEFAULT NULL,   `username` varchar(255) CHARACTER SET utf8 NOT NULL,  `email` varchar(255) CHARACTER SET utf8 NOT NULL,   `password` varchar(255) CHARACTER SET utf8 NOT NULL,  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,   PRIMARY KEY (`id`),   UNIQUE KEY `username` (`username`),   UNIQUE KEY `email` (`email`) ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;";
         queryInterface.sequelize.query(sql)
       })
       .then(() => {

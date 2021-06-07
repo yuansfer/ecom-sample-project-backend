@@ -28,6 +28,25 @@ const _purchaseMode = {
 }
 
 const _messages = {
+
+    INVALID_TOKEN: 'Invalid Token',
+    UNAUTHORIZED_ACCESS: 'Unauthorized Access',
+    ACCESS_DENIED: 'Access Denied',
+
+    ROLE_MISSING: 'User Role is missing',
+    USER_TYPE_MISSING: 'User Type is missing',
+    FIRST_NAME_MISSING: 'First Name is missing',
+    LAST_NAME_MISSING: 'Last Name is missing',
+    EMAIL_MISSING: 'Email is missing',
+
+    REGISTER_SUCCESS: 'Registered Successfully',
+    USER_EXIST: 'User Already Exist',
+
+    USERNAME_MISSING: 'Username is missing',
+    PASSWORD_MISSING: 'Password is missing',
+    INVALID_CREDENTIAL: 'Invalid Credential',
+    LOGIN_SUCCESS: 'Login Successful',
+
     MERCHANT_NO_MISSING: 'Merchant Number is missing',
     MERCHANT_STORE_NO_MISSING: 'Merchant Store Number is missing',
     MERCHANT_TOKEN_MISSING: 'Merchant Token is missing',

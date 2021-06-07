@@ -15,6 +15,11 @@ var cs = require('../services/common.service');
 var ycs = require('../services/yuansfer.service');
 
 module.exports = {
+	/**
+		* @method post
+		* @description for secure payment used to pay for an order
+		* @returns {object}
+	*/
 	securePay: async (req, res) => {
 
 		const { cart_id, customer_id, vendor, redirect_url } = req.body;
@@ -50,11 +55,11 @@ module.exports = {
 			try {
 
 				let query = `
-										SELECT p.title,p.type,p.price,cp.qty, p.price*cp.qty AS total
-										FROM products p
-										LEFT JOIN cart_products cp ON cp.product_id = p.id AND cp.purchase_mode ='buy'
-										JOIN carts c ON c.id = cp.cart_id
-										WHERE c.id = ${cart_id} AND c.customer_id = ${customer_id}`
+									SELECT p.title,p.type,p.price,cp.qty, p.price*cp.qty AS total
+									FROM products p
+									LEFT JOIN cart_products cp ON cp.product_id = p.id AND cp.purchase_mode ='buy'
+									JOIN carts c ON c.id = cp.cart_id
+									WHERE c.id = ${cart_id} AND c.customer_id = ${customer_id}`
 
 				const cartProducts = await models.sequelize.query(query, { type: models.sequelize.QueryTypes.SELECT })
 				if (!cartProducts.length) {
@@ -195,6 +200,11 @@ module.exports = {
 		}
 	},
 
+	/**
+	* @method post
+	* @description To initiate refund request for payment of a transaction
+	* @returns {object}
+	*/
 	refundRequest: async (req, res) => {
 
 		const { customer_id, order_id } = req.body;
@@ -293,6 +303,11 @@ module.exports = {
 		}
 	},
 
+	/**
+	* @method post
+	* @description To initiate authorization request for Auto Debit Payment
+	* @returns {object}
+	*/
 	authorize: async (req, res) => {
 
 		const { customer_id, vendor, redirect_url } = req.body
@@ -369,6 +384,11 @@ module.exports = {
 		}
 	},
 
+	/**
+	* @method post
+	* @description To initiate a payment request for Recurring Payments
+	* @returns {object}
+	*/
 	autoDebitPay: async (req, res) => {
 
 		const { customer_id, tmp } = req.body
@@ -551,6 +571,11 @@ module.exports = {
 		}
 	},
 
+	/**
+	* @method post
+	* @description To initiate a revoke request to revoke authorization requests
+	* @returns {object}
+	*/
 	revokeAutoPay: async (req, res) => {
 
 		const { customer_id, order_id, auto_debit_no } = req.body;

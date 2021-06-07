@@ -5,6 +5,12 @@ const { _success, _error, _notifications, _messages } = require('../constants');
 
 module.exports = {
 
+	/**
+	* @method get
+	* @description To get list of all historical orders details of customers with payment, refund and subscription information
+	* @param req,
+	* @returns {object}
+	*/
 	findAll: async (req, res) => {
 		const { customer_id, purchase_mode } = req.query;
 
@@ -71,6 +77,13 @@ module.exports = {
 			res.status(400).json(_error(error))
 		}
 	},
+
+	/**
+	* @method get
+	* @description To get an order details of customer with subscription information
+	* @param req,
+	* @returns {object}
+	*/
 	findOne: async (req, res) => {
 		const { id } = req.params
 

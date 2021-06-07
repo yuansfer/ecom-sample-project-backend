@@ -1,6 +1,9 @@
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 const util = require('util')
+const jwt = require("jsonwebtoken");
+const bcrypt = require('bcrypt');
+const passportConfig = require('../config/passport.config');
 
 const _fullDateFormatOfMoment = 'YYYY-MM-DD HH:mm:ss.SSS'
 
@@ -29,10 +32,22 @@ const _extractObject = (obj) => {
     return _obj;
 };
 
+
+const _generateToken = async (payload) => {
+    return await jwt.sign(payload, passportConfig.SECRET_KEY, {
+        expiresIn: passportConfig.TOKEN_LIFE
+        //issuer: process.env.ROOT_URL
+    });
+}
+
+const _generateHasPassword = async (password) => bcrypt.hashSync(password, passportConfig.SALT_ROUNDS)
+
 module.exports = {
     _getError,
     _uuid,
     _compareDate,
     _referenceNo,
     _extractObject,
+    _generateToken,
+    _generateHasPassword
 }
