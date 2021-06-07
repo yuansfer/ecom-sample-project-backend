@@ -29,6 +29,9 @@ const _purchaseMode = {
 
 const _messages = {
 
+    TOKEN_REFRESHED_SUCCESS: 'Token Refreshed Successfully',
+    TOKEN_MISSING: 'Token is missing',
+    REFRESH_TOKEN_MISSING: 'Refresh Token is missing',
     INVALID_TOKEN: 'Invalid Token',
     UNAUTHORIZED_ACCESS: 'Unauthorized Access',
     ACCESS_DENIED: 'Access Denied',
@@ -46,6 +49,7 @@ const _messages = {
     PASSWORD_MISSING: 'Password is missing',
     INVALID_CREDENTIAL: 'Invalid Credential',
     LOGIN_SUCCESS: 'Login Successful',
+    LOGOUT_SUCCESS: 'Logout Successful',
 
     MERCHANT_NO_MISSING: 'Merchant Number is missing',
     MERCHANT_STORE_NO_MISSING: 'Merchant Store Number is missing',

@@ -28,19 +28,27 @@ const _getError = (error) => {
 }
 
 const _extractObject = (obj) => {
-    const _obj = util.inspect(obj, { showHidden: false, depth: null, colors: true })
-    return _obj;
+    return util.inspect(obj, { showHidden: false, depth: null, colors: true })
 };
 
-
-const _generateToken = async (payload) => {
-    return await jwt.sign(payload, passportConfig.SECRET_KEY, {
-        expiresIn: passportConfig.TOKEN_LIFE
-        //issuer: process.env.ROOT_URL
-    });
+const _generateToken = async (payload, mode = null) => {
+    if (mode === 'refresh') {
+        return await jwt.sign(payload, passportConfig.REFRESH_TOKEN_SECRET, {
+            /* set expiresIn when call refreshtoken endpoint */
+            //expiresIn: passportConfig.REFRESH_TOKEN_LIFE
+            //issuer: process.env.ROOT_URL
+        });
+    } else {
+        return await jwt.sign(payload, passportConfig.TOKEN_SECRET, {
+            expiresIn: passportConfig.TOKEN_LIFE
+            //issuer: process.env.ROOT_URL
+        });
+    }
 }
 
 const _generateHasPassword = async (password) => bcrypt.hashSync(password, passportConfig.SALT_ROUNDS)
+
+const _extractToken = async (token, mode = null) => await jwt.verify(token, (mode === 'refresh' ? passportConfig.REFRESH_TOKEN_SECRET : passportConfig.TOKEN_SECRET), { expiresIn: (mode === 'refresh' ? passportConfig.REFRESH_TOKEN_LIFE : passportConfig.TOKEN_LIFE) });
 
 module.exports = {
     _getError,
@@ -49,5 +57,6 @@ module.exports = {
     _referenceNo,
     _extractObject,
     _generateToken,
-    _generateHasPassword
+    _extractToken,
+    _generateHasPassword,
 }

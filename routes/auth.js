@@ -1,5 +1,7 @@
 const router = require('express').Router();
 const authController = require('../controllers/authController');
+const { authenticate } = require('../middlewares/auth.middleware');
+const MIDDLEWARES = [authenticate];
 
 router
 	.route('/login')
@@ -11,7 +13,11 @@ router
 
 router
 	.route('/logout')
-	.post(authController.logout)
+	.post([MIDDLEWARES], authController.logout)
+
+router
+	.route('/token')
+	.post([MIDDLEWARES], authController.token)
 
 // router
 // .route('/refresh')

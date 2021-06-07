@@ -4,7 +4,7 @@ module.exports = {
   up: (queryInterface, Sequelize) => {
 
     // USERS
-    let sql = "CREATE TABLE IF NOT EXISTS `users` (`id` int(11) NOT NULL AUTO_INCREMENT,`role_id` int(11) DEFAULT NULL,`user_type` enum('customer','merchant') CHARACTER SET utf8 DEFAULT NULL,`firstname` varchar(255) CHARACTER SET utf8 NOT NULL,`lastname` varchar(255) CHARACTER SET utf8 DEFAULT NULL,`username` varchar(255) CHARACTER SET utf8 NOT NULL,`email` varchar(255) CHARACTER SET utf8 NOT NULL,`password` varchar(255) CHARACTER SET utf8 NOT NULL,`status` enum('active','inactive') CHARACTER SET utf8 DEFAULT 'active',`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`),UNIQUE KEY `username` (`username`), UNIQUE KEY `email` (`email`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+    let sql = "CREATE TABLE IF NOT EXISTS `users` (`id` int(11) NOT NULL AUTO_INCREMENT,`customer_id` INT(11) NULL DEFAULT NULL, `role_id` int(11) DEFAULT NULL,`user_type` enum('customer','merchant') CHARACTER SET utf8 DEFAULT NULL,`firstname` varchar(255) CHARACTER SET utf8 NOT NULL,`lastname` varchar(255) CHARACTER SET utf8 DEFAULT NULL,`username` varchar(255) CHARACTER SET utf8 NOT NULL,`email` varchar(255) CHARACTER SET utf8 NOT NULL,`password` varchar(255) CHARACTER SET utf8 NOT NULL,`status` enum('active','inactive') CHARACTER SET utf8 DEFAULT 'active',`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`),UNIQUE KEY `username` (`username`), UNIQUE KEY `email` (`email`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
     return queryInterface.sequelize.query(sql)
       .then(() => {
@@ -70,7 +70,7 @@ module.exports = {
       .then(() => {
 
         // CANCEL SUBSCRIPTIONS
-        let sql = "CREATE TABLE `cancel_subscriptions` ( 	`id` INT(11) NOT NULL AUTO_INCREMENT, 	`customer_id` INT(11) NOT NULL, 	`order_id` INT(11) NOT NULL, 	`vendor` VARCHAR(25) NOT NULL COLLATE 'utf8_general_ci', 	`auto_debit_no` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci', 	`auto_reference` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci', 	`success_code` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`success_message` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	PRIMARY KEY (`id`) USING BTREE, 	INDEX `customer_id` (`customer_id`) USING BTREE, 	INDEX `order_id` (`order_id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB ; ";
+        let sql = "CREATE TABLE `cancel_subscriptions` ( 	`id` INT(11) NOT NULL AUTO_INCREMENT, 	`customer_id` INT(11) NOT NULL, 	`order_id` INT(11) NOT NULL, 	`vendor` VARCHAR(25) NOT NULL COLLATE 'utf8_general_ci', 	`auto_debit_no` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci', 	`auto_reference` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci', 	`success_code` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`success_message` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	PRIMARY KEY (`id`) USING BTREE, 	INDEX `customer_id` (`customer_id`) USING BTREE, 	INDEX `order_id` (`order_id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB;";
         queryInterface.sequelize.query(sql)
       })
       .then(() => {
@@ -95,6 +95,13 @@ module.exports = {
 
         // ROLES
         let sql = "CREATE TABLE IF NOT EXISTS `roles` (`id` int(11) NOT NULL AUTO_INCREMENT,`name` varchar(255) CHARACTER SET utf8 NOT NULL,`status` enum('active','inactive') CHARACTER SET utf8 DEFAULT 'active',`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`),UNIQUE KEY `unique_name` (`name`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+        queryInterface.sequelize.query(sql)
+      })
+
+      .then(() => {
+
+        // USER-TOKENS
+        let sql = "CREATE TABLE `user_tokens` (	`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,	`username` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci',	`token` TEXT NULL DEFAULT NULL COLLATE 'utf8_general_ci',	`refresh_token` TEXT NULL DEFAULT NULL COLLATE 'utf8_general_ci',	`created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,	`updated_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,	PRIMARY KEY (`id`) USING BTREE,	INDEX `user_id` (`user_id`) USING BTREE) COLLATE='utf8_general_ci 'ENGINE=InnoDB DEFAULT CHARSET=utf8";
         queryInterface.sequelize.query(sql)
       })
 

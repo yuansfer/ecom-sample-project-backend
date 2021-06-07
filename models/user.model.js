@@ -6,6 +6,11 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true,
             autoIncrement: true
         },
+        customer_id: {
+            type: DataTypes.INTEGER(11),
+            allowNull: true,
+            defaultValue: null,
+        },
         role_id: {
             type: DataTypes.INTEGER(11),
             allowNull: true,
