@@ -78,6 +78,8 @@ module.exports = {
             }
 
             const response = {
+              userId: user.id,
+              userType: user.user_type,
               token: token,
               refreshToken: refreshToken,
               tokenType: passportConfig.TOKEN_TYPE,
