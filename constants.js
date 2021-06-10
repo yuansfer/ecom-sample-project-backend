@@ -47,7 +47,7 @@ const _messages = {
 
     USERNAME_MISSING: 'Username is missing',
     PASSWORD_MISSING: 'Password is missing',
-    INVALID_CREDENTIAL: 'Invalid Credential',
+    INVALID_CREDENTIAL: 'Invalid Username or Password',
     LOGIN_SUCCESS: 'Login Successful',
     LOGOUT_SUCCESS: 'Logout Successful',
 
@@ -84,6 +84,7 @@ const _messages = {
     PRODUCT_REMOVED: 'Product Removed Successfully',
     PRODUCT_SUBSCRIBED: 'Product Subscribed Successfully',
     SHIPPING_ADDRESS_UPDATED: 'Shipping Address Updated Successfully',
+    ORDER_CREATE_ISSUE: 'Issue in create order',
 
     PAYMENT_DONE: 'Payment Done Successfully',
     REFUND_INITIATED: 'Refund Initiated Successfully',
