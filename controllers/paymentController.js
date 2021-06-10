@@ -427,9 +427,9 @@ module.exports = {
 					if (!authData.auto_debit_no) {
 						res.status(200).send(_error([], _messages.AUTO_DEBIT_NUMBER_EMPTY))
 					} else {
-						const autoDebitNo = authData.auto_debit_no
+						var _autoDebitNo = authData.auto_debit_no
 
-						const cartData = +await models.Cart.findAll({
+						const cartData = await models.Cart.findAll({
 							where: {
 								customer_id: customer_id,
 							},
@@ -439,7 +439,7 @@ module.exports = {
 									model: models.CartProduct,
 									as: 'products',
 									where: {
-										purchase_mode: _purchaseMode.SUBSCRIBE,
+										purchase_mode: `${_purchaseMode.SUBSCRIBE}`,
 										subscribe_month: {
 											[Op.gte]: 1
 										}
@@ -471,95 +471,100 @@ module.exports = {
 								phone: shipping_phone,
 							})
 
-							for (let cartProduct of products) {
+							if (orderData) {
 
-								const { product_id, qty, size, purchase_mode, subscribe_month, product: { price } } = cartProduct
-								const amount = (numeral(numeral(price).value() * parseInt(qty)).value())
+								for (let cartProduct of products) {
 
-								if (amount > 0) {
+									const { product_id, qty, size, purchase_mode, subscribe_month, product: { price } } = cartProduct
+									const _amount = (numeral(numeral(price).value() * parseInt(qty)).value())
 
-									await ycs._init()
+									if (_amount > 0) {
 
-									//if (yuansfer) {
+										await ycs._init()
 
-									const tokenData = await cs._applyToken({ customer_id: customer_id, tmp: tmp })
+										//if (yuansfer) {
 
-									if (tokenData && tokenData.auto_debit_no && tokenData.auto_reference) {
+										const tokenData = await cs._applyToken({ customer_id: customer_id, tmp: tmp })
 
-										/* Secure Pay */
-										const autoPayData = await ycs._autoDebitPay({
-											autoDebitNo: `${autoDebitNo}`,
-											amount: `${amount}`,
-											currency: `${process.env.CURRENCY}`,
-											settleCurrency: `${process.env.SETTLECURRENCY}`,
-											reference: _referenceNo(),
-											ipnUrl: `${process.env.BACKEND_ENDPOINT_URL}` + '/payments/test3',
-										})
+										if (tokenData && tokenData.auto_debit_no && tokenData.auto_reference) {
 
-										console.log('AUTO DEBIT RESPONSE', autoPayData)
+											/* Secure Pay */
+											const autoPayData = await ycs._autoDebitPay({
+												autoDebitNo: `${_autoDebitNo}`,
+												amount: `${_amount}`,
+												currency: `${process.env.CURRENCY}`,
+												settleCurrency: `${process.env.SETTLECURRENCY}`,
+												reference: _referenceNo(),
+												ipnUrl: `${process.env.BACKEND_ENDPOINT_URL}` + '/payments/test3',
+											})
 
-										const { ret_code, ret_msg, result } = autoPayData
-										const { amount, autoDebitNo, currency, reference, settleCurrency, transactionNo, status } = result
+											console.log('AUTO DEBIT RESPONSE', autoPayData)
 
-										if (ret_code === ycs._responseCode.SUCCESS && status === 'success') {
+											const { ret_code, ret_msg, result } = autoPayData
+											const { amount, autoDebitNo, currency, reference, settleCurrency, transactionNo, status } = result
 
-											/* Delete product from cart */
-											await models.CartProduct.destroy({
-												where: {
-													cart_id: cartId,
+											if (ret_code === `${ycs._responseCode.SUCCESS}` && status === 'success') {
+
+												/* Delete product from cart */
+												await models.CartProduct.destroy({
+													where: {
+														cart_id: cartId,
+														product_id: product_id,
+													}
+												})
+
+												/* Set order product information from cart product */
+												await models.OrderProduct.create({
+													order_id: orderData.id,
 													product_id: product_id,
-												}
-											})
+													qty: qty,
+													price: price,
+													size: size,
+													purchase_mode: purchase_mode,
+													subscribe_month: subscribe_month,
+												})
 
-											/* Set order product information from cart product */
-											await models.OrderProduct.create({
-												order_id: orderData.id,
-												product_id: product_id,
-												qty: qty,
-												price: price,
-												size: size,
-												purchase_mode: purchase_mode,
-												subscribe_month: subscribe_month,
-											})
+												/* Create subscription for individual product */
+												const subscriptionData = await models.Subscription.create({
+													customer_id: customer_id,
+													order_id: orderData.id,
+													product_id: product_id,
+													amount: amount,
+													start_date: moment().format('YYYY-MM-DD'),
+													subscribe_month: subscribe_month,
+													auto_debit_no: autoDebitNo,
+												})
 
-											/* Create subscription for individual product */
-											const subscriptionData = await models.Subscription.create({
-												customer_id: customer_id,
-												order_id: orderData.id,
-												product_id: product_id,
-												amount: amount,
-												start_date: moment().format('YYYY-MM-DD'),
-												subscribe_month: subscribe_month,
-												auto_debit_no: autoDebitNo,
-											})
-
-											/* Create subscription payment */
-											await models.SubscribePayment.create({
-												subscription_id: subscriptionData.id,
-												customer_id: customer_id,
-												order_id: orderData.id,
-												paid_amount: amount,
-												auto_debit_no: autoDebitNo,
-												currency: currency,
-												reference: reference,
-												settle_currency: settleCurrency,
-												transaction_no: transactionNo,
-												status: status,
-												success_code: ret_code,
-												success_message: ret_msg,
-											})
-										} else {
-											res.status(200).send(_error([], _getError(ret_msg)))
+												/* Create subscription payment */
+												await models.SubscribePayment.create({
+													subscription_id: subscriptionData.id,
+													customer_id: customer_id,
+													order_id: orderData.id,
+													paid_amount: amount,
+													auto_debit_no: autoDebitNo,
+													currency: currency,
+													reference: reference,
+													settle_currency: settleCurrency,
+													transaction_no: transactionNo,
+													status: status,
+													success_code: ret_code,
+													success_message: ret_msg,
+												})
+											} else {
+												res.status(200).send(_error([], _getError(ret_msg)))
+											}
 										}
+										//}
 									}
-									//}
 								}
+
+								/* Clear Cart */
+								await models.Cart.destroy({ where: { id: cartId, customer_id: customer_id } })
+								await res.status(200).send(_success([{ order_id: orderData.id }], _messages.AUTO_DEBIT_PAYMENT_SUCCESS))
+
+							} else {
+								res.status(200).send(_error([], _messages.ORDER_CREATE_ISSUE))
 							}
-
-							/* Clear Cart */
-							await models.Cart.destroy({ where: { id: cartId, customer_id: customer_id } })
-							await res.status(200).send(_success([{ order_id: orderData.id }], _messages.AUTO_DEBIT_PAYMENT_SUCCESS))
-
 						} else {
 							res.status(200).send(_error([], _messages.CART_EMPTY))
 						}
