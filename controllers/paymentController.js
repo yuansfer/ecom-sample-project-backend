@@ -428,6 +428,7 @@ module.exports = {
 						res.status(200).send(_error([], _messages.AUTO_DEBIT_NUMBER_EMPTY))
 					} else {
 						var _autoDebitNo = authData.auto_debit_no
+						var vendor = authData.vendor
 
 						const cartData = await models.Cart.findAll({
 							where: {
@@ -541,6 +542,7 @@ module.exports = {
 													customer_id: customer_id,
 													order_id: orderData.id,
 													paid_amount: amount,
+													payment_method: vendor,
 													auto_debit_no: autoDebitNo,
 													currency: currency,
 													reference: reference,
