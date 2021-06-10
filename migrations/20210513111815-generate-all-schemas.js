@@ -10,7 +10,7 @@ module.exports = {
       .then(() => {
 
         // CUSTOMERS
-        let sql = "CREATE TABLE IF NOT EXISTS `customers` (  `id` int(11) NOT NULL AUTO_INCREMENT,   `firstname` varchar(255) CHARACTER SET utf8 NOT NULL,  `lastname` varchar(255) CHARACTER SET utf8 DEFAULT NULL,   `username` varchar(255) CHARACTER SET utf8 NOT NULL,  `email` varchar(255) CHARACTER SET utf8 NOT NULL,   `password` varchar(255) CHARACTER SET utf8 NOT NULL,  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,   PRIMARY KEY (`id`),   UNIQUE KEY `username` (`username`),   UNIQUE KEY `email` (`email`) ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;";
+        let sql = "CREATE TABLE `customers` (`id` INT(11) NOT NULL AUTO_INCREMENT,`firstname` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`lastname` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci', 	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	PRIMARY KEY (`id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB DEFAULT CHARSET=utf8";
         queryInterface.sequelize.query(sql)
       })
       .then(() => {
@@ -22,7 +22,7 @@ module.exports = {
       .then(() => {
 
         // CARTS
-        let sql = "CREATE TABLE `carts` ( 	`id` INT(11) NOT NULL AUTO_INCREMENT,`customer_id` INT(11) NOT NULL,`shipping_address` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci', 	`shipping_city_state` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci',`shipping_country` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci',`shipping_email` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci', 	`shipping_phone` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci',`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`) USING BTREE,INDEX `customer_id` (`customer_id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB;";
+        let sql = "CREATE TABLE `carts` ( 	`id` INT(11) NOT NULL AUTO_INCREMENT,`customer_id` INT(11) NULL DEFAULT NULL, `session_id` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci', `shipping_address` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci', 	`shipping_city_state` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci',`shipping_country` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci',`shipping_email` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci', 	`shipping_phone` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci',`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY (`id`) USING BTREE,INDEX `customer_id` (`customer_id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB;";
         queryInterface.sequelize.query(sql)
       })
       .then(() => {
@@ -64,7 +64,7 @@ module.exports = {
       .then(() => {
 
         // SUBSCRIPTION - PAYMENTS
-        let sql = "CREATE TABLE `subscribe_payments` ( 	`id` INT(11) NOT NULL AUTO_INCREMENT, 	`subscription_id` INT(11) NOT NULL, 	`customer_id` INT(11) NOT NULL, 	`order_id` INT(11) NOT NULL, 	`paid_amount` DECIMAL(10,2) NOT NULL, 	`auto_debit_no` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci', 	`currency` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`reference` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`settle_currency` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`transaction_no` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`status` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci', 	`success_code` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`success_message` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	PRIMARY KEY (`id`) USING BTREE, 	INDEX `customer_id` (`customer_id`) USING BTREE, 	INDEX `order_id` (`order_id`) USING BTREE, 	INDEX `subscription_id` (`subscription_id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB ; ";
+        let sql = "CREATE TABLE `subscribe_payments` ( 	`id` INT(11) NOT NULL AUTO_INCREMENT, 	`subscription_id` INT(11) NOT NULL, 	`customer_id` INT(11) NOT NULL, 	`order_id` INT(11) NOT NULL, 	`paid_amount` DECIMAL(10,2) NOT NULL, `payment_method` VARCHAR(25) NOT NULL COLLATE 'utf8_general_ci',	`auto_debit_no` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci', 	`currency` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`reference` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`settle_currency` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`transaction_no` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`status` VARCHAR(50) NOT NULL COLLATE 'utf8_general_ci', 	`success_code` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`success_message` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	PRIMARY KEY (`id`) USING BTREE, 	INDEX `customer_id` (`customer_id`) USING BTREE, 	INDEX `order_id` (`order_id`) USING BTREE, 	INDEX `subscription_id` (`subscription_id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB ; ";
         queryInterface.sequelize.query(sql)
       })
       .then(() => {
