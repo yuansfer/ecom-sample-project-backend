@@ -21,8 +21,8 @@ const authenticate = async (req, res, next) => {
     };
 
     const verified = jwt.verify(token, passportConfig.TOKEN_SECRET, options);
-    if (verified.user_type === 'customer' && verified.username) { // Check authorization, 1 = Admin
 
+    if (['customer', 'merchant'].includes(verified.user_type) && verified.username) {
       const user = await models.User.findOne({
         where: {
           username: verified.username
@@ -30,11 +30,6 @@ const authenticate = async (req, res, next) => {
       })
 
       if (!user) return res.status(200).send(_error([], _messages.UNAUTHORIZED_ACCESS))
-
-      //let req_url = req.baseUrl + req.route.path;      
-      // if (req_url.includes("users/:id") && parseInt(req.params.id) !== verified.id) {
-      //   return res.status(401).send(_error([], _messages.UNAUTHORIZED_ACCESS))
-      // }
       delete user.password;
       req.user = user;
       next();
