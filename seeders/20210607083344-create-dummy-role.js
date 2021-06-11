@@ -1,11 +1,11 @@
 'use strict';
 
 module.exports = {
-  up: async (queryInterface, Sequelize) => {
+  up: (queryInterface, Sequelize) => {
     return queryInterface.sequelize.query("INSERT INTO `roles` (`name`) VALUES ('Admin')")
   },
 
-  down: async (queryInterface, Sequelize) => {
+  down: (queryInterface, Sequelize) => {
     return queryInterface.bulkDelete('Role', [{ id: [1] }]);
   }
 };
