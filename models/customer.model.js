@@ -23,39 +23,6 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true,
             defaultValue: null
         },
-        username: {
-            type: DataTypes.STRING(255),
-            allowNull: false,
-            unique: {
-                name: "username",
-                args: [['username']],
-                msg: 'Username already exists'
-            }
-        },
-        email: {
-            type: DataTypes.STRING(255),
-            allowNull: false,
-            validate: {
-                notEmpty: {
-                    msg: "Email should not empty"
-                },
-                notNull: {
-                    msg: "Email should not null"
-                },
-                isEmail: {
-                    msg: "Please enter your email address in format: (yourname@example.com)"
-                }
-            },
-            unique: {
-                name: "email",
-                args: [['email']],
-                msg: 'Email already exists'
-            }
-        },
-        password: {
-            type: DataTypes.STRING(255),
-            allowNull: false
-        },
         createdAt: {
             type: DataTypes.DATE,
             allowNull: false,
@@ -68,15 +35,6 @@ module.exports = (sequelize, DataTypes) => {
         },
     }, {
         underscored: true,
-        indexes: [{
-            name: 'username',
-            fields: [sequelize.fn('lower', sequelize.col('username'))],
-            unique: true,
-        }, {
-            name: 'email',
-            fields: [sequelize.fn('lower', sequelize.col('email'))],
-            unique: true,
-        }],
     });
 
     return Customer;

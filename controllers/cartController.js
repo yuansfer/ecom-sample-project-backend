@@ -15,34 +15,35 @@ module.exports = {
   * @returns {object}
   */
   getMode: async (req, res) => {
-    const { customer_id } = req.query;
+    const { customer_id, session_id } = req.query;
 
-    if (!customer_id) {
+    if (!customer_id && !session_id) {
       res.status(200).send(_error([], _messages.CUSTOMER_MISSING))
-    }
-
-    const cart = await models.Cart.findOne({
-      attributes: ['id', 'customer_id'],
-      where: {
-        customer_id: customer_id
-      },
-      include: [
-        {
-          attributes: ['cart_id', 'product_id', 'purchase_mode'],
-          model: models.CartProduct,
-          as: 'products',
+    } else {
+      const cart = await models.Cart.findOne({
+        attributes: ['id', 'customer_id', 'session_id'],
+        where: {
+          ...(session_id) && { session_id: session_id },
+          ...(customer_id) && { customer_id: customer_id },
         },
-      ],
-    })
+        include: [
+          {
+            attributes: ['cart_id', 'product_id', 'purchase_mode'],
+            model: models.CartProduct,
+            as: 'products',
+          },
+        ],
+      })
 
-    var response = { mode: '' }
-    if (cart) {
-      const { products } = cart;
-      if (products && products[0] && products[0].purchase_mode) {
-        response.mode = products[0].purchase_mode
+      var response = { mode: '' }
+      if (cart) {
+        const { products } = cart;
+        if (products && products[0] && products[0].purchase_mode) {
+          response.mode = products[0].purchase_mode
+        }
       }
+      res.status(200).send(_success(response))
     }
-    res.status(200).send(_success(response))
   },
 
   /**
@@ -84,7 +85,7 @@ module.exports = {
   findOne: async (req, res) => {
 
     const { id } = req.params
-    const { purchase_mode, customer_id } = req.query;
+    const { purchase_mode, customer_id, session_id } = req.query;
 
     if (!id) {
       res.status(200).send(_error([], _messages.UNKNOWN_CART))
@@ -96,6 +97,7 @@ module.exports = {
         where: {
           ...(id) && { id: id },
           ...(customer_id) && { customer_id: customer_id },
+          ...(session_id) && { session_id: session_id },
           ...(purchase_mode) && { '$products.purchase_mode$': purchase_mode },
         },
         include: [
@@ -125,10 +127,10 @@ module.exports = {
   * @returns {object}
   */
   addORupdate: async (req, res) => {
-    const { customer_id, product_id, qty, size, purchase_mode, subscribe_month } = req.body
+    const { customer_id, session_id, product_id, qty, size, purchase_mode, subscribe_month } = req.body
     let errorMessage;
 
-    if (!customer_id) {
+    if (!customer_id && !session_id) {
       errorMessage = _messages.CUSTOMER_MISSING
     } else if (!product_id) {
       errorMessage = _messages.PRODUCT_MISSING
@@ -149,13 +151,15 @@ module.exports = {
 
         var cart = await models.Cart.findOne({
           where: {
-            customer_id: customer_id,
+            ...(customer_id) && { customer_id: customer_id },
+            ...(session_id) && { session_id: session_id },
           }
         })
 
         if (!cart) {
           cart = await models.Cart.create({
-            customer_id: customer_id
+            ...(customer_id) && { customer_id: customer_id },
+            ...(session_id) && { session_id: session_id },
           })
         }
 
@@ -277,13 +281,12 @@ module.exports = {
   * @returns {object}
   */
   addShipping: async (req, res) => {
-    const { customer_id, address, city_state, country, email, phone } = req.body
+
+    const { id } = req.params
+    const { address, city_state, country, email, phone } = req.body
 
     let errorMessage;
-
-    if (!customer_id) {
-      errorMessage = _messages.CUSTOMER_MISSING
-    } else if (!address) {
+    if (!address) {
       errorMessage = _messages.SHIPPING_ADDRESS_MISSING
     } else if (!city_state) {
       errorMessage = _messages.SHIPPING_CITY_STATE_MISSING
@@ -301,9 +304,7 @@ module.exports = {
       try {
 
         const cart = await models.Cart.findOne({
-          where: {
-            customer_id: customer_id,
-          }
+          where: { id: id }
         })
 
         if (cart) {
@@ -349,6 +350,47 @@ module.exports = {
           }
         })
         res.status(200).send(_success([], _messages.PRODUCT_REMOVED))
+
+      } catch (error) {
+        res.status(400).send(_error([], _getError(error)))
+      }
+    }
+  },
+
+  /**
+ * @method put
+ * @description Update Cart Details
+ * @returns success message
+ */
+  updateCart: async (req, res) => {
+
+    const { id } = req.params
+    const { customer_id } = req.body
+    let errorMessage;
+
+    if (!id) {
+      errorMessage = _messages.UNKNOWN_CART
+    } else if (!customer_id) {
+      res.status(200).send(_error([], _messages.CUSTOMER_MISSING))
+    }
+
+    if (errorMessage) {
+      res.status(200).send(_error([], errorMessage))
+    } else {
+      try {
+
+        const cart = await models.Cart.findOne({
+          where: {
+            id: id,
+          }
+        })
+
+        if (cart) {
+          cart.session_id = ""
+          cart.customer_id = customer_id
+          await cart.save();
+        }
+        res.status(200).send(_success([], _messages.CART_UPDATED))
 
       } catch (error) {
         res.status(400).send(_error([], _getError(error)))

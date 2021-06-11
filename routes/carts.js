@@ -15,6 +15,7 @@ router
 router
     .route('/:id(\\d+)')
     .get(cartController.findOne)
+    .put(cartController.updateCart)
 
 // router
 //     .route('/:id/product/:product_id')

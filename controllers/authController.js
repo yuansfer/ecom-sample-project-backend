@@ -53,6 +53,9 @@ module.exports = {
               role_id: user.role_id || '',
               user_type: user.user_type,
               username: user.username,
+              ...(user.user_type === 'customer') && {
+                customer_id: user.customer_id
+              }
             };
 
             const token = await _generateToken(payload)
@@ -81,6 +84,9 @@ module.exports = {
             const response = {
               userId: user.id,
               userType: user.user_type,
+              ...(user.user_type === 'customer') && {
+                customerId: user.customer_id
+              },
               token: token,
               refreshToken: refreshToken,
               tokenType: passportConfig.TOKEN_TYPE,
@@ -130,6 +136,9 @@ module.exports = {
           role_id: data.role_id || '',
           user_type: data.user_type,
           username: data.username,
+          ...(user.user_type === 'customer') && {
+            customer_id: user.customer_id
+          }
         };
 
         const newToken = await _generateToken(payload)

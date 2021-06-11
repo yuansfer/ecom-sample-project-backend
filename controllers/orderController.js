@@ -16,7 +16,7 @@ module.exports = {
 
 		try {
 			const orders = await models.Order.findAll({
-				attributes: ['id', 'customer_id'],
+				attributes: ['id', 'customer_id', 'vendor'],
 				where: {
 					...(customer_id) && { customer_id: customer_id },
 					...(purchase_mode) && { '$products.purchase_mode$': purchase_mode },
@@ -37,6 +37,7 @@ module.exports = {
 							}
 						],
 					},
+
 					{
 						model: models.Payment,
 						as: 'payment',
@@ -67,7 +68,6 @@ module.exports = {
 					{
 						model: models.Customer,
 						as: 'customer',
-						attributes: ['id', 'firstname', 'lastname'],
 					}
 				]
 			})

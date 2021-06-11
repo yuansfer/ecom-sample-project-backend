@@ -12,7 +12,7 @@ let ExtractJwt = passportJWT.ExtractJwt;
 let JwtStrategy = passportJWT.Strategy;
 let jwtOptions = {};
 jwtOptions.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
-jwtOptions.secretOrKey = passportConfig.SECRET_KEY;
+jwtOptions.secretOrKey = passportConfig.TOKEN_SECRET;
 
 var models = require('./models/index');
 
@@ -55,7 +55,7 @@ passport.deserializeUser((id, callback) => {
 /*
 const options = {};
 options.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
-options.secretOrKey = passportConfig.SECRET_KEY;
+options.secretOrKey = passportConfig.TOKEN_SECRET;
 
 lets create our strategy for web token
 let strategy = new Strategy(options, (payload, done) => {
