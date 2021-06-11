@@ -508,16 +508,8 @@ module.exports = {
 
 											if (ret_code === `${ycs._responseCode.SUCCESS}` && status === 'success') {
 
-												/* Delete product from cart */
-												await models.CartProduct.destroy({
-													where: {
-														cart_id: cartId,
-														product_id: product_id,
-													}
-												})
-
 												/* Set order product information from cart product */
-												await models.OrderProduct.create({
+												const orderProduct = await models.OrderProduct.create({
 													order_id: orderData.id,
 													product_id: product_id,
 													qty: qty,
@@ -526,6 +518,16 @@ module.exports = {
 													purchase_mode: purchase_mode,
 													subscribe_month: subscribe_month,
 												})
+
+												if (orderProduct) {
+													/* Delete product from cart */
+													await models.CartProduct.destroy({
+														where: {
+															cart_id: cartId,
+															product_id: product_id,
+														}
+													})
+												}
 
 												/* Create subscription for individual product */
 												const subscriptionData = await models.Subscription.create({

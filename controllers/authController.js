@@ -3,6 +3,7 @@ var models = require('../models/index');
 const { _success, _error, _notifications, _messages } = require('../constants');
 const { _generateToken, _extractToken, _generateHasPassword } = require('../utils/helper');
 const { isUserExist, createUser } = require('../services/user.service');
+const { createCustomer } = require('../services/customer.service');
 const passportConfig = require('../config/passport.config');
 
 module.exports = {
@@ -167,31 +168,21 @@ module.exports = {
 
     if (!user_type) {
       errorMessage = _messages.USER_TYPE_MISSING
-    }
-
-    if (!firstname) {
+    } else if (!firstname) {
       errorMessage = _messages.FIRST_NAME_MISSING
-    }
-
-    if (!lastname) {
+    } else if (!lastname) {
       errorMessage = _messages.LAST_NAME_MISSING
-    }
-
-    if (!username) {
+    } else if (!email) {
+      errorMessage = _messages.EMAIL_MISSING
+    } else if (!password) {
+      errorMessage = _messages.PASSWORD_MISSING
+    } else if (!username) {
       errorMessage = _messages.USERNAME_MISSING
     } else {
       var isExist = await isUserExist(username)
       if (isExist) {
         errorMessage = _messages.USER_EXIST
       }
-    }
-
-    if (!email) {
-      errorMessage = _messages.EMAIL_MISSING
-    }
-
-    if (!password) {
-      errorMessage = _messages.PASSWORD_MISSING
     }
 
     if (errorMessage) {
@@ -209,6 +200,13 @@ module.exports = {
           ...(email) && { email: email },
           ...(password) && { password: hashPassword },
         })
+
+        if (user) {
+          await createCustomer({
+            ...(firstname) && { firstname: firstname },
+            ...(lastname) && { lastname: lastname },
+          })
+        }
         res.status(200).send(_success([user], _messages.REGISTER_SUCCESS))
       } catch (error) {
         res.status(200).json(_error(error))
@@ -222,9 +220,7 @@ module.exports = {
   * @returns null
   */
   logout: async (req, res) => {
-
     const { username } = req.user;
-
     await models.UserToken.destroy({
       where: {
         username: username
