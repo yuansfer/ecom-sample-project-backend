@@ -134,6 +134,7 @@ module.exports = {
 								const orderData = await cs._addOrderData({
 									cart_id: cart_id,
 									customer_id: customer_id,
+									vendor: vendor,
 								})
 
 								if (orderData && orderData.order_id) {
