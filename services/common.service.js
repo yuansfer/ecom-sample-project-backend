@@ -101,7 +101,7 @@ const _applyToken = async ({ customer_id, order_id = 0, tmp }) => {
 					})
 
 					if (!token) {
-						console.log('token doest not exists')
+						console.log('TOKEN DOEST NOT EXISTS, SO APPLY')
 
 						/* If no token exists, apply for new token */
 						const tokenData = await ycs._autoDebitApplyToken({
@@ -119,7 +119,7 @@ const _applyToken = async ({ customer_id, order_id = 0, tmp }) => {
 							if (ret_code === ycs._responseCode.SUCCESS) {
 
 								try {
-									await models.Token.create({
+									const token = await models.Token.create({
 										recurring_auth_id: id,
 										customer_id: customer_id,
 										auto_debit_no: autoDebitNo,
@@ -143,7 +143,7 @@ const _applyToken = async ({ customer_id, order_id = 0, tmp }) => {
 
 					} else {
 
-						console.log('token exists')
+						console.log('TOKEN EXISTS')
 						/***
 						 *  If token exists, then check access expiry time
 						 *  If it is expired, refresh it
