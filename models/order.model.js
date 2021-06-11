@@ -13,10 +13,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER(11),
             allowNull: false,
         },
-        // transaction_id: {
-        //     type: DataTypes.INTEGER(11),
-        //     allowNull: true,
-        // },
         address: {
             type: DataTypes.STRING,
             allowNull: false
@@ -34,6 +30,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false
         },
         phone: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        vendor: {
             type: DataTypes.STRING,
             allowNull: false
         },
