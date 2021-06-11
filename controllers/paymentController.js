@@ -428,6 +428,7 @@ module.exports = {
 						res.status(200).send(_error([], _messages.AUTO_DEBIT_NUMBER_EMPTY))
 					} else {
 						var _autoDebitNo = authData.auto_debit_no
+						var vendor = authData.vendor
 
 						const cartData = await models.Cart.findAll({
 							where: {
@@ -469,6 +470,7 @@ module.exports = {
 								country: shipping_country,
 								email: shipping_email,
 								phone: shipping_phone,
+								vendor: vendor,
 							})
 
 							if (orderData) {
