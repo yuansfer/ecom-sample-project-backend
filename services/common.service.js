@@ -184,7 +184,7 @@ const _applyToken = async ({ customer_id, order_id = 0, tmp }) => {
 	});
 }
 
-const _addOrderData = async ({ cart_id, customer_id }) => {
+const _addOrderData = async ({ cart_id, customer_id, vendor }) => {
 
 	return new Promise(async (resolve, reject) => {
 
@@ -222,6 +222,7 @@ const _addOrderData = async ({ cart_id, customer_id }) => {
 					country: shipping_country,
 					email: shipping_email,
 					phone: shipping_phone,
+					vendor: vendor,
 				})
 
 				if (order) {
