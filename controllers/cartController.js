@@ -16,18 +16,18 @@ module.exports = {
   */
   getMode: async (req, res) => {
     const { customer_id, session_id } = req.query;
-
     if (!customer_id && !session_id) {
       res.status(200).send(_error([], _messages.CUSTOMER_MISSING))
     } else {
       const cart = await models.Cart.findOne({
         attributes: ['id', 'customer_id', 'session_id'],
         where: {
-          ...(session_id) && { session_id: session_id },
-          ...(customer_id) && { customer_id: customer_id },
+          ...(!customer_id && session_id) && { session_id: session_id },
+          ...(customer_id && !session_id) && { customer_id: customer_id },
         },
         include: [
           {
+            required: true,
             attributes: ['cart_id', 'product_id', 'purchase_mode'],
             model: models.CartProduct,
             as: 'products',

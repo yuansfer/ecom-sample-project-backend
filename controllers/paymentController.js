@@ -63,6 +63,7 @@ module.exports = {
 
 				const cartProducts = await models.sequelize.query(query, { type: models.sequelize.QueryTypes.SELECT })
 				if (!cartProducts.length) {
+					//throw new CustomError({ code: 200, message: _messages.CART_EMPTY })
 					await res.status(200).send(_error([], _messages.CART_EMPTY))
 				} else {
 					var paidResult;
@@ -177,6 +178,7 @@ module.exports = {
 				}
 			} catch (error) {
 
+				console.log('error', error)
 				(async function () {
 					/* Revert Payment in case of any issue if paid */
 					if (paidResult) {
@@ -338,9 +340,6 @@ module.exports = {
 			try {
 
 				await ycs._init()
-
-				//if (yuansfer) {
-
 				const temp_id = _uuid();
 				const params = {
 					autoIpnUrl: `${process.env.BACKEND_ENDPOINT_URL}` + '/payments/test',
@@ -378,7 +377,6 @@ module.exports = {
 				} else {
 					res.status(200).send(_error([], _messages.AUTHORIZE_ERROR))
 				}
-				//}
 			} catch (error) {
 				await res.status(400).send(_error([], _getError(error)))
 			}
@@ -476,6 +474,9 @@ module.exports = {
 
 							if (orderData) {
 
+								authData.order_id = cartId
+								await authData.save()
+
 								for (let cartProduct of products) {
 
 									const { product_id, qty, size, purchase_mode, subscribe_month, product: { price } } = cartProduct
@@ -484,8 +485,6 @@ module.exports = {
 									if (_amount > 0) {
 
 										await ycs._init()
-
-										//if (yuansfer) {
 
 										const tokenData = await cs._applyToken({ customer_id: customer_id, tmp: tmp })
 
@@ -540,26 +539,28 @@ module.exports = {
 													auto_debit_no: autoDebitNo,
 												})
 
-												/* Create subscription payment */
-												await models.SubscribePayment.create({
-													subscription_id: subscriptionData.id,
-													customer_id: customer_id,
-													order_id: orderData.id,
-													paid_amount: amount,
-													auto_debit_no: autoDebitNo,
-													currency: currency,
-													reference: reference,
-													settle_currency: settleCurrency,
-													transaction_no: transactionNo,
-													status: status,
-													success_code: ret_code,
-													success_message: ret_msg,
-												})
+												if (subscriptionData) {
+													/* Create subscription payment */
+													await models.SubscribePayment.create({
+														subscription_id: subscriptionData.id,
+														customer_id: customer_id,
+														order_id: orderData.id,
+														paid_amount: amount,
+														auto_debit_no: autoDebitNo,
+														currency: currency,
+														reference: reference,
+														settle_currency: settleCurrency,
+														transaction_no: transactionNo,
+														status: status,
+														success_code: ret_code,
+														success_message: ret_msg,
+													})
+												}
+
 											} else {
 												res.status(200).send(_error([], _getError(ret_msg)))
 											}
 										}
-										//}
 									}
 								}
 
