@@ -34,7 +34,7 @@ module.exports = {
       .then(() => {
 
         // ORDERS
-        let sql = "CREATE TABLE `orders` ( 	`id` INT(11) NOT NULL AUTO_INCREMENT, 	`customer_id` INT(11) NOT NULL, 	`address` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`city_state` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`country` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`email` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`phone` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	PRIMARY KEY (`id`) USING BTREE, 	INDEX `customer_id` (`customer_id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB ; ";
+        let sql = "CREATE TABLE `orders` ( 	`id` INT(11) NOT NULL AUTO_INCREMENT, 	`customer_id` INT(11) NOT NULL, 	`address` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`city_state` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`country` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`email` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', 	`phone` VARCHAR(255) NOT NULL COLLATE 'utf8_general_ci', `vendor` VARCHAR(25) NOT NULL COLLATE 'utf8_general_ci',	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	PRIMARY KEY (`id`) USING BTREE, 	INDEX `customer_id` (`customer_id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB ; ";
         queryInterface.sequelize.query(sql)
       })
       .then(() => {
