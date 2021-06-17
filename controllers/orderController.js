@@ -12,7 +12,6 @@ module.exports = {
 	* @returns {object}
 	*/
 	findAll: async (req, res, next) => {
-		console.log('hi')
 		const { customer_id, purchase_mode } = req.query;
 
 		try {
