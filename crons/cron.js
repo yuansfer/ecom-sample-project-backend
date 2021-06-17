@@ -55,7 +55,6 @@ const autoDebitPay = async () => {
 					})
 
 					if (subscriptionsData) {
-
 						for (let subscription of subscriptionsData) {
 
 							const subscriptionId = subscription.id
@@ -78,9 +77,6 @@ const autoDebitPay = async () => {
 									if (auto_debit_no) {
 
 										await ycs._init()
-
-										//if (yuansfer) {
-
 										const autoPayData = await ycs._autoDebitPay({
 												autoDebitNo: `${auto_debit_no}`,
 												amount: `${amount}`,
@@ -154,7 +150,6 @@ const autoDebitPay = async () => {
 													throw new Error(ret_msg);
 												}
 											}
-										//}
 									}
 
 								} else {
@@ -176,7 +171,7 @@ const autoDebitPay = async () => {
 						error: errorLogs,
 					}
 					await models.CronLog.update({
-						log: log,
+						log: JSON.stringify(log),
 						end_at: new Date(),
 					}, {
 						where: {
@@ -185,7 +180,7 @@ const autoDebitPay = async () => {
 					});
 
 				}).catch(async error => {
-					await res.status(400).send(_error([error], _getError(error)))
+					_getError(error)
 				});
 			}
 		}, {

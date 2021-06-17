@@ -15,24 +15,20 @@ const _refreshToken = async (auto_debit_no) => {
 	return new Promise(async (resolve, reject) => {
 		try {
 			await ycs._init()
-
-			//if (yuansfer) {
-
 			await ycs._autoDebitApplyToken({
-					autoDebitNo: auto_debit_no,
-					grantType: ycs._grantType.REFRESH_TOKEN,
-				}).then(async tokenData => {
-					if (tokenData) {
+				autoDebitNo: auto_debit_no,
+				grantType: ycs._grantType.REFRESH_TOKEN,
+			}).then(async tokenData => {
+				if (tokenData) {
 
-						console.log('REFRESH TOKEN RESPONSE', tokenData)
+					console.log('REFRESH TOKEN RESPONSE', tokenData)
 
-						const { ret_code, ret_msg, result } = tokenData
-						if (ret_code === ycs._responseCode.SUCCESS) {
-							resolve(result);
-						}
+					const { ret_code, ret_msg, result } = tokenData
+					if (ret_code === ycs._responseCode.SUCCESS) {
+						resolve(result);
 					}
-				})
-			//}
+				}
+			})
 
 		} catch (error) {
 			reject(_getError(error));
@@ -44,25 +40,22 @@ const _createNewToken = async (auto_debit_no) => {
 
 	return new Promise(async (resolve, reject) => {
 		try {
+
 			await ycs._init()
-
-			//if (yuansfer) {
-
 			await ycs._autoDebitApplyToken({
-					autoDebitNo: auto_debit_no,
-					grantType: ycs._grantType.AUTHORIZATION_CODE,
-				}).then(async tokenData => {
-					if (tokenData) {
-						const { ret_code, ret_msg, result } = tokenData
-						if (ret_code === ycs._responseCode.SUCCESS) {
-							resolve(result);
-						}
+				autoDebitNo: auto_debit_no,
+				grantType: ycs._grantType.AUTHORIZATION_CODE,
+			}).then(async tokenData => {
+				if (tokenData) {
+					const { ret_code, ret_msg, result } = tokenData
+					if (ret_code === ycs._responseCode.SUCCESS) {
+						resolve(result);
 					}
-				}).catch(async error => {
-					console.log(`CREATE NEW TOKEN > ERROR`, error);
-					reject(_getError(error));
-				})
-			//}
+				}
+			}).catch(async error => {
+				console.log(`CREATE NEW TOKEN > ERROR`, error);
+				reject(_getError(error));
+			})
 
 		} catch (error) {
 			reject(_getError(error));
@@ -90,91 +83,89 @@ const _applyToken = async ({ customer_id, order_id = 0, tmp }) => {
 			const { id, auto_debit_no, vendor } = recurringAuth
 
 			try {
-				await ycs._init()
 
-				//if (yuansfer) {
-					const token = await models.Token.findOne({
-						where: {
-							customer_id: customer_id,
-							auto_debit_no: auto_debit_no,
-						}
+				await ycs._init()
+				const token = await models.Token.findOne({
+					where: {
+						customer_id: customer_id,
+						auto_debit_no: auto_debit_no,
+					}
+				})
+
+				if (!token) {
+					console.log('TOKEN DOEST NOT EXISTS, SO APPLY')
+
+					/* If no token exists, apply for new token */
+					const tokenData = await ycs._autoDebitApplyToken({
+						autoDebitNo: auto_debit_no,
+						grantType: ycs._grantType.AUTHORIZATION_CODE,
 					})
 
-					if (!token) {
-						console.log('TOKEN DOEST NOT EXISTS, SO APPLY')
+					if (tokenData) {
 
-						/* If no token exists, apply for new token */
+						console.log('APPLY TOKEN RESPONSE', tokenData)
+
+						const { ret_code, ret_msg, result } = tokenData
+						const { accessTokenExpiryTime, autoDebitNo, autoReference, refreshTokenExpiryTime } = result
+
+						if (ret_code === ycs._responseCode.SUCCESS) {
+
+							try {
+								const token = await models.Token.create({
+									recurring_auth_id: id,
+									customer_id: customer_id,
+									auto_debit_no: autoDebitNo,
+									auto_reference: autoReference,
+									vendor: vendor,
+									access_token_expiry_time: accessTokenExpiryTime,
+									refresh_token_expiry_time: refreshTokenExpiryTime,
+									success_code: ret_code,
+									success_message: ret_msg,
+								})
+								resolve(token);
+							} catch (error) {
+								reject(_getError(error));
+							}
+						} else {
+							reject(ret_msg);
+						}
+					} else {
+						reject(_getError(error));
+					}
+
+				} else {
+
+					console.log('TOKEN EXISTS')
+					/***
+					 *  If token exists, then check access expiry time
+					 *  If it is expired, refresh it
+					 */
+					const isTokenValid = _compareDate(moment(token.access_token_expiry_time), moment())
+
+					if (!isTokenValid) {
 						const tokenData = await ycs._autoDebitApplyToken({
 							autoDebitNo: auto_debit_no,
-							grantType: ycs._grantType.AUTHORIZATION_CODE,
+							grantType: ycs._grantType.REFRESH_TOKEN,
 						})
 
 						if (tokenData) {
 
-							console.log('APPLY TOKEN RESPONSE', tokenData)
-
+							console.log('REFRESH TOKEN RESPONSE', tokenData)
 							const { ret_code, ret_msg, result } = tokenData
-							const { accessTokenExpiryTime, autoDebitNo, autoReference, refreshTokenExpiryTime } = result
 
 							if (ret_code === ycs._responseCode.SUCCESS) {
-
-								try {
-									const token = await models.Token.create({
-										recurring_auth_id: id,
-										customer_id: customer_id,
-										auto_debit_no: autoDebitNo,
-										auto_reference: autoReference,
-										vendor: vendor,
-										access_token_expiry_time: accessTokenExpiryTime,
-										refresh_token_expiry_time: refreshTokenExpiryTime,
-										success_code: ret_code,
-										success_message: ret_msg,
-									})
-									resolve(token);
-								} catch (error) {
-									reject(_getError(error));
-								}
-							} else {
-								reject(ret_msg);
-							}
-						} else {
-							reject(_getError(error));
-						}
-
-					} else {
-
-						console.log('TOKEN EXISTS')
-						/***
-						 *  If token exists, then check access expiry time
-						 *  If it is expired, refresh it
-						 */
-						const isTokenValid = _compareDate(moment(token.access_token_expiry_time), moment())
-
-						if (!isTokenValid) {
-							const tokenData = await ycs._autoDebitApplyToken({
-								autoDebitNo: auto_debit_no,
-								grantType: ycs._grantType.REFRESH_TOKEN,
-							})
-
-							if (tokenData) {
-
-								console.log('REFRESH TOKEN RESPONSE', tokenData)
-								const { ret_code, ret_msg, result } = tokenData
-
-								if (ret_code === ycs._responseCode.SUCCESS) {
-									const { accessTokenExpiryTime, refreshTokenExpiryTime } = result
-									token.access_token_expiry_time = accessTokenExpiryTime
-									token.refresh_token_expiry_time = refreshTokenExpiryTime
-									token.success_code = ret_code
-									token.success_message = ret_msg
-									await token.save()
-								}
+								const { accessTokenExpiryTime, refreshTokenExpiryTime } = result
+								token.access_token_expiry_time = accessTokenExpiryTime
+								token.refresh_token_expiry_time = refreshTokenExpiryTime
+								token.success_code = ret_code
+								token.success_message = ret_msg
+								await token.save()
 							}
 						}
-						//return await token;
-						resolve(token);
 					}
-				//}
+					//return await token;
+					resolve(token);
+				}
 			} catch (error) {
 				reject(_getError(error));
 			}

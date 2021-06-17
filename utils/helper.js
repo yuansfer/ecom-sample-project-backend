@@ -17,13 +17,17 @@ const _getError = (error) => {
     let message = error;
     if (error instanceof Error || error instanceof TypeError) {
         message = error.message;
-    } else if (['SequelizeDatabaseError', 'SequelizeUniqueConstraintError'].includes(error.name)) {
+    } else if (['SequelizeDatabaseError', 'SequelizeUniqueConstraintError',].includes(error.name)) {
         message = error.original.sqlMessage;
+    } else if (error.name === 'SequelizeCustomError') {
+        message = error.errors[0].message;
     } else if (error.name === 'SequelizeValidationError') {
         message = error.errors[0].message;
+        //message = error.errors.map(e => e.message);
     } else if (error.ret_msg) {
         message = error.ret_msg;
     }
+    //console.log('message', message)
     return message;
 }
 

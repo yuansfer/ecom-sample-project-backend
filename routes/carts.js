@@ -1,7 +1,5 @@
 const router = require('express').Router();
 const cartController = require('../controllers/cartController');
-const { authenticate } = require('../middlewares/auth.middleware');
-const MIDDLEWARES = [authenticate];
 
 router
     .route('/')

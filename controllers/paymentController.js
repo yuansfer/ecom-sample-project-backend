@@ -2,10 +2,9 @@ var models = require('../models/index');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
-// const yuansfer = require('../utils/Yuansfer-js-sdk');
 require('dotenv').config()
 
-const { _success, _error, _messages, _purchaseMode } = require('../constants');
+const { _success, _messages, _purchaseMode } = require('../constants');
 const { _getError, _uuid, _referenceNo, _extractObject } = require('../utils/helper');
 const moment = require('moment');
 var _ = require('lodash');
@@ -13,6 +12,7 @@ var numeral = require('numeral');
 
 var cs = require('../services/common.service');
 var ycs = require('../services/yuansfer.service');
+const { httpApiError } = require('../utils/errorBaseClass')
 
 module.exports = {
 	/**
@@ -20,10 +20,11 @@ module.exports = {
 		* @description for secure payment used to pay for an order
 		* @returns {object}
 	*/
-	securePay: async (req, res) => {
+	securePay: async (req, res, next) => {
 
 		const { cart_id, customer_id, vendor, redirect_url } = req.body;
 		let errorMessage;
+		let paidResult;
 
 		if (!process.env.MERCHANT_NO) {
 			errorMessage = _messages.MERCHANT_NO_MISSING
@@ -50,7 +51,7 @@ module.exports = {
 		}
 
 		if (errorMessage) {
-			await res.status(200).send(_error([], errorMessage))
+			next(new httpApiError(400, errorMessage))
 		} else {
 			try {
 
@@ -63,10 +64,9 @@ module.exports = {
 
 				const cartProducts = await models.sequelize.query(query, { type: models.sequelize.QueryTypes.SELECT })
 				if (!cartProducts.length) {
-					//throw new CustomError({ code: 200, message: _messages.CART_EMPTY })
-					await res.status(200).send(_error([], _messages.CART_EMPTY))
+					throw new httpApiError(400, _messages.CART_EMPTY)
 				} else {
-					var paidResult;
+
 					await models.sequelize.transaction(async () => {
 
 						var goodsInfo = _.map((cartProducts || []), p => {
@@ -79,8 +79,6 @@ module.exports = {
 						const amount = _.sumBy(cartProducts, (p) => numeral(p.total).value());
 
 						await ycs._init()
-
-						//if (yuansfer) {
 
 						var securePayResponse = await ycs._securePay({
 							amount: `${amount}`,
@@ -168,36 +166,38 @@ module.exports = {
 								// COPY CART DATA INTO ORDER DATA [END]
 
 							} else {
-								res.status(200).send(_error([], _getError(ret_msg)))
+								throw new httpApiError(400, ret_msg)
 							}
-						} else {
-							res.status(200).send(_error([], 'Secure Pay Not Done'))
 						}
-						//}
 					})
 				}
 			} catch (error) {
 
-				console.log('error', error)
 				(async function () {
 					/* Revert Payment in case of any issue if paid */
 					if (paidResult) {
-						const { amount, currency, reference, settleCurrency, transactionNo } = paidResult
+						console.log('paidResult', paidResult)
+						try {
+							const { amount, currency, reference, settleCurrency, transactionNo } = paidResult
 
-						await ycs._refund({
-							refundAmount: `${amount}`,
-							currency: `${currency}`,
-							settleCurrency: `${settleCurrency}`,
-							...(transactionNo) && {
-								transactionNo: transactionNo,
-							},
-							...(!transactionNo) && {
-								reference: reference,
-							}
-						})
+							//await ycs._init()
+							await ycs._refund({
+								refundAmount: `${amount}`,
+								currency: `${currency}`,
+								settleCurrency: `${settleCurrency}`,
+								...(transactionNo) && {
+									transactionNo: transactionNo,
+								},
+								...(!transactionNo) && {
+									reference: reference,
+								}
+							})
+						} catch (error) {
+							next(new httpApiError(400, _getError(error)))
+						}
 					}
 
-					await res.status(400).send(_error([], _getError(error)))
+					next(new httpApiError(400, _getError(error)))
 				})();
 			}
 		}
@@ -208,7 +208,7 @@ module.exports = {
 	* @description To initiate refund request for payment of a transaction
 	* @returns {object}
 	*/
-	refundRequest: async (req, res) => {
+	refundRequest: async (req, res, next) => {
 
 		const { customer_id, order_id } = req.body;
 		let errorMessage;
@@ -228,7 +228,7 @@ module.exports = {
 		}
 
 		if (errorMessage) {
-			await res.status(200).send(_error([], errorMessage))
+			next(new httpApiError(400, errorMessage))
 		} else {
 			try {
 
@@ -246,11 +246,9 @@ module.exports = {
 
 						await ycs._init()
 
-						//if (yuansfer) {
 						/**
-					* transactionNo, reference cannot exist the same time.
-					*/
-
+						* transactionNo, reference cannot exist the same time.
+						*/
 						const refundData = await ycs._refund({
 							refundAmount: paid_amount,
 							currency: currency,
@@ -290,18 +288,17 @@ module.exports = {
 								await res.status(200).send(_success([refundData], _messages.REFUND_INITIATED))
 
 							} else {
-								res.status(200).send(_error([], _getError(ret_msg)))
+								throw new httpApiError(400, ret_msg)
 							}
 						} else {
-							res.status(200).send(_error([], "Refund Error"))
+							throw new httpApiError(400, 'Refund Error')
 						}
-						//}
 					} else {
-						res.status(200).send(_error([], "Unknown Payment"))
+						throw new httpApiError(400, 'Unknown Payment')
 					}
 				})
 			} catch (error) {
-				res.status(400).send(_error([], _getError(error)))
+				next(new httpApiError(400, _getError(error)))
 			}
 		}
 	},
@@ -311,7 +308,7 @@ module.exports = {
 	* @description To initiate authorization request for Auto Debit Payment
 	* @returns {object}
 	*/
-	authorize: async (req, res) => {
+	authorize: async (req, res, next) => {
 
 		const { customer_id, vendor, redirect_url } = req.body
 		let errorMessage;
@@ -335,7 +332,7 @@ module.exports = {
 		}
 
 		if (errorMessage) {
-			await res.status(200).send(_error([], errorMessage))
+			next(new httpApiError(400, errorMessage))
 		} else {
 			try {
 
@@ -372,13 +369,13 @@ module.exports = {
 						})
 						await res.status(200).send(_success([result], _messages.AUTHORIZE_SUCCESS))
 					} else {
-						res.status(200).send(_error([], _getError(ret_msg)))
+						throw new httpApiError(400, ret_msg)
 					}
 				} else {
-					res.status(200).send(_error([], _messages.AUTHORIZE_ERROR))
+					throw new httpApiError(400, _messages.AUTHORIZE_ERROR)
 				}
 			} catch (error) {
-				await res.status(400).send(_error([], _getError(error)))
+				next(new httpApiError(400, _getError(error)))
 			}
 		}
 	},
@@ -388,7 +385,7 @@ module.exports = {
 	* @description To initiate a payment request for Recurring Payments
 	* @returns {object}
 	*/
-	autoDebitPay: async (req, res) => {
+	autoDebitPay: async (req, res, next) => {
 
 		const { customer_id, tmp } = req.body
 		let errorMessage;
@@ -410,7 +407,7 @@ module.exports = {
 		}
 
 		if (errorMessage) {
-			await res.status(200).send(_error([], errorMessage))
+			next(new httpApiError(400, errorMessage))
 		} else {
 			try {
 
@@ -424,7 +421,7 @@ module.exports = {
 					})
 
 					if (!authData.auto_debit_no) {
-						res.status(200).send(_error([], _messages.AUTO_DEBIT_NUMBER_EMPTY))
+						throw new httpApiError(400, _messages.AUTO_DEBIT_NUMBER_EMPTY)
 					} else {
 						var _autoDebitNo = authData.auto_debit_no
 						var vendor = authData.vendor
@@ -558,7 +555,7 @@ module.exports = {
 												}
 
 											} else {
-												res.status(200).send(_error([], _getError(ret_msg)))
+												throw new httpApiError(400, ret_msg)
 											}
 										}
 									}
@@ -569,15 +566,15 @@ module.exports = {
 								await res.status(200).send(_success([{ order_id: orderData.id }], _messages.AUTO_DEBIT_PAYMENT_SUCCESS))
 
 							} else {
-								res.status(200).send(_error([], _messages.ORDER_CREATE_ISSUE))
+								throw new httpApiError(400, _messages.ORDER_CREATE_ISSUE)
 							}
 						} else {
-							res.status(200).send(_error([], _messages.CART_EMPTY))
+							throw new httpApiError(400, _messages.CART_EMPTY)
 						}
 					}
 				})
 			} catch (error) {
-				res.status(400).send(_error([], _getError(error)))
+				next(new httpApiError(400, _getError(error)))
 			}
 		}
 	},
@@ -587,7 +584,7 @@ module.exports = {
 	* @description To initiate a revoke request to revoke authorization requests
 	* @returns {object}
 	*/
-	revokeAutoPay: async (req, res) => {
+	revokeAutoPay: async (req, res, next) => {
 
 		const { customer_id, order_id, auto_debit_no } = req.body;
 		let errorMessage;
@@ -609,7 +606,7 @@ module.exports = {
 		}
 
 		if (errorMessage) {
-			await res.status(200).send(_error([], errorMessage))
+			next(new httpApiError(400, errorMessage))
 		} else {
 			try {
 
@@ -678,28 +675,28 @@ module.exports = {
 
 								await res.status(200).send(_success([autoDebitRevoke], _messages.AUTO_DEBIT_PAY_REVOKED_SUCCESS))
 							} else {
-								res.status(200).send(_error([], _getError(ret_msg)))
+								throw new httpApiError(400, ret_msg)
 							}
 						}
 					} else {
-						res.status(200).send(_error([], _messages.NO_SUBSCRIPTION_FOUND))
+						throw new httpApiError(400, _messages.NO_SUBSCRIPTION_FOUND)
 					}
 				})
 			} catch (error) {
-				res.status(400).send(_error([error], _getError(error)))
+				next(new httpApiError(400, _getError(error)))
 			}
 		}
 	},
 
-	test: async (req, res) => {
+	test: async (req, res, next) => {
 		console.log('test > req', req)
 	},
 
-	test1: async (req, res) => {
+	test1: async (req, res, next) => {
 		console.log('test1 > req', req)
 	},
 
-	test2: async (req, res) => {
+	test2: async (req, res, next) => {
 		console.log('test2 > req', req)
 	},
 };

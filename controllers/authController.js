@@ -1,10 +1,11 @@
 const bcrypt = require('bcrypt');
 var models = require('../models/index');
 const { _success, _error, _notifications, _messages } = require('../constants');
-const { _generateToken, _extractToken, _generateHasPassword } = require('../utils/helper');
+const { _generateToken, _getError, _extractToken, _generateHasPassword } = require('../utils/helper');
 const { isUserExist, createUser } = require('../services/user.service');
 const { createCustomer } = require('../services/customer.service');
 const passportConfig = require('../config/passport.config');
+const { httpApiError } = require('../utils/errorBaseClass')
 
 module.exports = {
 
@@ -13,7 +14,7 @@ module.exports = {
   * @description To initiate a login request to get access system
   * @returns {object}
   */
-  login: async (req, res) => {
+  login: async (req, res, next) => {
 
     const { username, password } = req.body;
 
@@ -28,7 +29,7 @@ module.exports = {
     }
 
     if (errorMessage) {
-      res.status(200).send(_error([], errorMessage))
+      next(new httpApiError(400, errorMessage))
     } else {
       try {
         const user = await models.User.findOne({
@@ -62,7 +63,6 @@ module.exports = {
             const refreshToken = await _generateToken(payload, 'refresh')
 
             /* Create/Update LoggedIn user's tokens */
-
             const userToken = await models.UserToken.findOne({
               where: {
                 username: user.username,
@@ -92,15 +92,15 @@ module.exports = {
               tokenType: passportConfig.TOKEN_TYPE,
               expiresIn: passportConfig.TOKEN_LIFE,
             }
-            res.send(_success([response], _messages.LOGIN_SUCCESS))
+            res.status(200).send(_success([response], _messages.LOGIN_SUCCESS))
           } else {
-            res.status(200).send(_error([], _messages.INVALID_CREDENTIAL))
+            throw new httpApiError(400, _messages.INVALID_CREDENTIAL)
           }
         } else {
-          res.status(200).send(_error([], _messages.INVALID_CREDENTIAL))
+          throw new httpApiError(400, _messages.INVALID_CREDENTIAL)
         }
       } catch (error) {
-        res.status(400).json(_error(error))
+        next(new httpApiError(400, _getError(error)))
       }
     }
   },
@@ -110,7 +110,7 @@ module.exports = {
   * @description To create a request that generated new token based on the refresh token
   * @returns {object}
   */
-  token: async (req, res) => {
+  token: async (req, res, next) => {
 
     const { refreshToken } = req.body;
     let errorMessage;
@@ -118,11 +118,11 @@ module.exports = {
     if (!refreshToken) {
       errorMessage = _messages.REFRESH_TOKEN_MISSING
     }
+
     if (errorMessage) {
-      res.status(200).send(_error([], errorMessage))
+      next(new httpApiError(400, errorMessage))
     } else {
 
-      console.log('refreshToken', refreshToken)
       const data = await _extractToken(refreshToken, 'refresh')
       const userToken = await models.UserToken.findOne({
         where: {
@@ -156,7 +156,7 @@ module.exports = {
         }
         res.status(200).send(_success([response], _messages.TOKEN_REFRESHED_SUCCESS))
       } else {
-        res.status(200).send(_error([], _messages.INVALID_TOKEN))
+        throw new httpApiError(400, _messages.INVALID_TOKEN)
       }
     }
   },
@@ -166,7 +166,7 @@ module.exports = {
   * @description To initiate a new user registration request to create an account
   * @returns {object}
   */
-  register: async (req, res) => {
+  register: async (req, res, next) => {
 
     const { role_id, user_type, firstname, lastname, username, email, password } = req.body;
     let errorMessage;
@@ -195,7 +195,7 @@ module.exports = {
     }
 
     if (errorMessage) {
-      res.status(200).send(_error([], errorMessage))
+      next(new httpApiError(400, errorMessage))
     } else {
 
       try {
@@ -218,7 +218,7 @@ module.exports = {
         }
         res.status(200).send(_success([user], _messages.REGISTER_SUCCESS))
       } catch (error) {
-        res.status(200).json(_error(error))
+        next(new httpApiError(400, _getError(error)))
       }
     }
   },
@@ -228,7 +228,7 @@ module.exports = {
   * @description To logout from system
   * @returns null
   */
-  logout: async (req, res) => {
+  logout: async (req, res, next) => {
     const { username } = req.user;
     await models.UserToken.destroy({
       where: {

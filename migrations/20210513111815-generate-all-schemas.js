@@ -88,7 +88,7 @@ module.exports = {
       .then(async () => {
 
         // CRON-LOGS
-        let sql = "CREATE TABLE `cron_logs` ( 	`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT, 	`name` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci', 	`start_at` DATETIME NULL DEFAULT NULL, 	`end_at` DATETIME NULL DEFAULT NULL, 	`log` JSON NULL DEFAULT NULL, 	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	PRIMARY KEY (`id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB ; ";
+        let sql = "CREATE TABLE `cron_logs` ( 	`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT, 	`name` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_general_ci', 	`start_at` DATETIME NULL DEFAULT NULL, 	`end_at` DATETIME NULL DEFAULT NULL, 	`log` TEXT NULL DEFAULT NULL, 	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 	PRIMARY KEY (`id`) USING BTREE ) COLLATE='utf8_general_ci' ENGINE=InnoDB ; ";
         await queryInterface.sequelize.query(sql)
       })
       .then(async () => {

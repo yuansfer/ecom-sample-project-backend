@@ -1,13 +1,13 @@
 const jwt = require("jsonwebtoken");
 var models = require('../models/index');
-
 const passportConfig = require('../config/passport.config');
-const { _error, _messages } = require('../constants');
+const { _messages } = require('../constants');
+const { httpApiError } = require('../utils/errorBaseClass')
 
 const authenticate = async (req, res, next) => {
 
   let token = req.header('Authorization');
-  if (!token) return res.status(401).send(_error([], _messages.ACCESS_DENIED))
+  if (!token) throw new httpApiError(401, _messages.ACCESS_DENIED)
 
   try {
 
@@ -29,16 +29,16 @@ const authenticate = async (req, res, next) => {
         }
       })
 
-      if (!user) return res.status(200).send(_error([], _messages.UNAUTHORIZED_ACCESS))
+      if (!user) throw new httpApiError(401, _messages.UNAUTHORIZED_ACCESS)
       delete user.password;
       req.user = user;
       next();
     } else {
-      return res.status(200).send(_error([], _messages.INVALID_TOKEN))
+      throw new httpApiError(401, _messages.INVALID_TOKEN)
     }
   }
   catch (err) {
-    return res.status(200).send(_error([], _messages.INVALID_TOKEN))
+    next(new httpApiError(401, _messages.INVALID_TOKEN))
   }
 }
 

@@ -2,10 +2,9 @@ var models = require('../models/index');
 const { _success, _error, _notifications, _messages, _purchaseMode } = require('../constants');
 const { _getError, } = require('../utils/helper');
 
-// var cs = require('../services/common.service');
-var numeral = require('numeral');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const { httpApiError } = require('../utils/errorBaseClass')
 
 module.exports = {
   /**
@@ -14,10 +13,12 @@ module.exports = {
   * @param req, customer_id
   * @returns {object}
   */
-  getMode: async (req, res) => {
+  getMode: async (req, res, next) => {
+
     const { customer_id, session_id } = req.query;
+
     if (!customer_id && !session_id) {
-      res.status(200).send(_error([], _messages.CUSTOMER_MISSING))
+      next(new httpApiError(400, _messages.UNKNOWN_USER))
     } else {
       const cart = await models.Cart.findOne({
         attributes: ['id', 'customer_id', 'session_id'],
@@ -52,7 +53,7 @@ module.exports = {
   * @param req,
   * @returns {object}
   */
-  findAll: async (req, res) => {
+  findAll: async (req, res, next) => {
 
     try {
       const carts = await models.Cart.findAll({
@@ -72,7 +73,7 @@ module.exports = {
 
       res.status(200).send(_success(carts))
     } catch (error) {
-      res.status(400).send(_error([], _getError(error)))
+      next(new httpApiError(400, _getError(error)))
     }
   },
 
@@ -82,13 +83,13 @@ module.exports = {
   * @param req,
   * @returns {object}
   */
-  findOne: async (req, res) => {
+  findOne: async (req, res, next) => {
 
     const { id } = req.params
     const { purchase_mode, customer_id, session_id } = req.query;
 
     if (!id) {
-      res.status(200).send(_error([], _messages.UNKNOWN_CART))
+      next(new httpApiError(400, _messages.UNKNOWN_CART))
     }
 
     try {
@@ -116,7 +117,7 @@ module.exports = {
 
       res.status(200).send(_success(cart))
     } catch (error) {
-      res.status(400).send(_error([], _getError(error)))
+      next(new httpApiError(400, _getError(error)))
     }
   },
 
@@ -126,8 +127,9 @@ module.exports = {
   * @param req, customer_id, product_id and other product detail
   * @returns {object}
   */
-  addORupdate: async (req, res) => {
+  addORupdate: async (req, res, next) => {
     const { customer_id, session_id, product_id, qty, size, purchase_mode, subscribe_month } = req.body
+
     let errorMessage;
 
     if (!customer_id && !session_id) {
@@ -145,7 +147,7 @@ module.exports = {
     }
 
     if (errorMessage) {
-      res.status(200).send(_error([], errorMessage))
+      next(new httpApiError(400, errorMessage))
     } else {
       try {
 
@@ -204,7 +206,7 @@ module.exports = {
         }
 
       } catch (error) {
-        res.status(400).send(_error([], _getError(error)))
+        next(new httpApiError(400, _getError(error)))
       }
     }
   },
@@ -215,11 +217,11 @@ module.exports = {
   * @param req, cart_id, product_id and other product detail
   * @returns {object}
   */
-  updateProduct: async (req, res) => {
+  updateProduct: async (req, res, next) => {
 
     const { cart_id, cart_product_id, product_id, qty, size, subscribe_month } = req.body
-    let errorMessage;
 
+    let errorMessage;
     if (!cart_product_id) {
       errorMessage = _messages.UNKNOWN_CART_PRODUCT
     } else if (!product_id) {
@@ -229,7 +231,7 @@ module.exports = {
     }
 
     if (errorMessage) {
-      res.status(200).send(_error([], errorMessage))
+      next(new httpApiError(400, errorMessage))
     } else {
       try {
 
@@ -265,11 +267,11 @@ module.exports = {
             res.status(200).send(_success([cartProduct], _messages.CART_UPDATED))
           }
         } else {
-          res.status(200).send(_error([], _messages.NO_SUCH_PRODUCT_IN_CART))
+          throw new httpApiError(400, _messages.NO_SUCH_PRODUCT_IN_CART)
         }
 
       } catch (error) {
-        res.status(400).send(_error([], _getError(error)))
+        next(new httpApiError(400, _getError(error)))
       }
     }
   },
@@ -280,7 +282,7 @@ module.exports = {
   * @param req, customer_id, shipping address detail
   * @returns {object}
   */
-  addShipping: async (req, res) => {
+  addShipping: async (req, res, next) => {
 
     const { id } = req.params
     const { address, city_state, country, email, phone } = req.body
@@ -299,7 +301,7 @@ module.exports = {
     }
 
     if (errorMessage) {
-      res.status(200).send(_error([], errorMessage))
+      next(new httpApiError(400, errorMessage))
     } else {
       try {
 
@@ -317,7 +319,7 @@ module.exports = {
           res.status(200).send(_success([cart], _messages.SHIPPING_ADDRESS_UPDATED))
         }
       } catch (error) {
-        res.status(400).send(_error([], _getError(error)))
+        next(new httpApiError(400, _getError(error)))
       }
     }
   },
@@ -327,11 +329,11 @@ module.exports = {
   * @description To delete product from cart
   * @returns success message
   */
-  removeProduct: async (req, res) => {
+  removeProduct: async (req, res, next) => {
 
     const { id, cart_product_id } = req.params
-    let errorMessage;
 
+    let errorMessage;
     if (!id) {
       errorMessage = _messages.UNKNOWN_CART
     } else if (!cart_product_id) {
@@ -339,7 +341,7 @@ module.exports = {
     }
 
     if (errorMessage) {
-      res.status(200).send(_error([], errorMessage))
+      next(new httpApiError(400, errorMessage))
     } else {
       try {
 
@@ -352,7 +354,7 @@ module.exports = {
         res.status(200).send(_success([], _messages.PRODUCT_REMOVED))
 
       } catch (error) {
-        res.status(400).send(_error([], _getError(error)))
+        next(new httpApiError(400, _getError(error)))
       }
     }
   },
@@ -362,7 +364,7 @@ module.exports = {
  * @description Update Cart Details
  * @returns success message
  */
-  updateCart: async (req, res) => {
+  updateCart: async (req, res, next) => {
 
     const { id } = req.params
     const { customer_id } = req.body
@@ -371,11 +373,11 @@ module.exports = {
     if (!id) {
       errorMessage = _messages.UNKNOWN_CART
     } else if (!customer_id) {
-      res.status(200).send(_error([], _messages.CUSTOMER_MISSING))
+      next(new httpApiError(400, _messages.CUSTOMER_MISSING))
     }
 
     if (errorMessage) {
-      res.status(200).send(_error([], errorMessage))
+      next(new httpApiError(400, errorMessage))
     } else {
       try {
 
@@ -393,7 +395,7 @@ module.exports = {
         res.status(200).send(_success([], _messages.CART_UPDATED))
 
       } catch (error) {
-        res.status(400).send(_error([], _getError(error)))
+        next(new httpApiError(400, _getError(error)))
       }
     }
   },

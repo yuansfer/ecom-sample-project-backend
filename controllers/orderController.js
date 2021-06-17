@@ -1,7 +1,7 @@
 var models = require('../models/index');
-const Sequelize = require('sequelize');
 const { _success, _error, _notifications, _messages } = require('../constants');
-// var cs = require('../services/common.service');
+const { _getError, } = require('../utils/helper');
+const { httpApiError } = require('../utils/errorBaseClass')
 
 module.exports = {
 
@@ -11,7 +11,8 @@ module.exports = {
 	* @param req,
 	* @returns {object}
 	*/
-	findAll: async (req, res) => {
+	findAll: async (req, res, next) => {
+		console.log('hi')
 		const { customer_id, purchase_mode } = req.query;
 
 		try {
@@ -72,9 +73,9 @@ module.exports = {
 				]
 			})
 
-			await res.send(_success(orders))
+			await res.status(200).send(_success(orders))
 		} catch (error) {
-			res.status(400).json(_error(error))
+			next(new httpApiError(400, _getError(error)))
 		}
 	},
 
@@ -84,11 +85,11 @@ module.exports = {
 	* @param req,
 	* @returns {object}
 	*/
-	findOne: async (req, res) => {
+	findOne: async (req, res, next) => {
 		const { id } = req.params
 
 		if (!id) {
-			await res.status(400).send(_error([], _messages.UNKNOWN_ORDER))
+			next(new httpApiError(400, _messages.UNKNOWN_ORDER))
 		}
 
 		try {
@@ -113,9 +114,9 @@ module.exports = {
 					}
 				],
 			})
-			await res.send(_success(order))
+			await res.status(200).send(_success(order))
 		} catch (error) {
-			res.status(400).json(_error(error))
+			next(new httpApiError(400, _getError(error)))
 		}
 	},
 };

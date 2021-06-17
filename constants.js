@@ -10,7 +10,16 @@ const _error = (data = [], message) => {
     return {
         error: true,
         data: data,
-        message: message
+        message: message,
+    }
+}
+
+const _error1 = (status, message, data) => {
+    return {
+        error: true,
+        status: status,
+        message: message,
+        data: data,
     }
 }
 
@@ -61,6 +70,7 @@ const _messages = {
 
     VENDOR_MISSING: 'Vendor is missing',
 
+    UNKNOWN_USER: 'Unknown User',
     UNKNOWN_CART: 'Unknown Cart',
     UNKNOWN_ORDER: 'Unknown Order',
     CART_EMPTY: 'Cart is Empty',
@@ -98,6 +108,7 @@ const _messages = {
 module.exports = {
     _success,
     _error,
+    _error1,
     _notifications,
     _messages,
     _purchaseMode

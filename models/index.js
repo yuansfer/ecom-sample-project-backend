@@ -1,11 +1,8 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-
 const dbConfig = require("../config/db.config.js");
-
 const Sequelize = require("sequelize");
-
 const cls = require('cls-hooked');
 const namespace = cls.createNamespace('yuansfer');
 Sequelize.useCLS(namespace);
@@ -55,12 +52,5 @@ sequelize
 
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
-
-// HIDE THIS [START]
-// db.sequelize.sync({ force: true })
-//   .then(() => {
-//   console.log('Drop and Resync with { force: true }');
-// });
-// HIDE THIS [END]
 
 module.exports = db;

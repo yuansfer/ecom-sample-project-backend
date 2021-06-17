@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true
         },
         log: {
-            type: DataTypes.JSON,
+            type: DataTypes.TEXT,
             allowNull: true
         },
         createdAt: {

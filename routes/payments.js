@@ -2,6 +2,8 @@ const router = require('express').Router();
 const paymentController = require('../controllers/paymentController');
 const { authenticate } = require('../middlewares/auth.middleware');
 const MIDDLEWARES = [authenticate];
+// const passport = require("passport");
+// const MIDDLEWARES = [passport.authenticate('jwt', { session: false })];
 
 router.route('/secure-pay')
     .post([MIDDLEWARES], paymentController.securePay)
