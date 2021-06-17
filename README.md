@@ -1,31 +1,31 @@
 # Ecom Sample Project (Backend)
 
 
-## Installation
-
+## Install dependencies
 ```bash
 yarn install
 ```
-
+## Run
 ```bash
-Create Database Name with "yuansfer"
+yarn nodemon
 ```
-
+## Create Database
 ```bash
-yarn sequelize db:migrate  (To Create all schema)
+Name with "yuansfer"
 ```
-
+## Run Migration to Create Database Schemas
 ```bash
-yarn sequelize db:seed:all  (To Create default merchant and customer user)
+yarn sequelize db:migrate
 ```
-
-
-## Credential
-
+## Run Seeders To Create Default Customer and Merchant User
 ```bash
-For Customer : customer@yuansfer.com / password@123
+yarn sequelize db:seed:all
 ```
-
+## Credential For Customer
 ```bash
-For Merchant : merchant@yuansfer.com / password@123
+customer@yuansfer.com / password@123
+```
+## Credential For Merchant
+```bash
+merchant@yuansfer.com / password@123
 ```
